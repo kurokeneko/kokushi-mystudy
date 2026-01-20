@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>国試MyStudy</title>
+<title>国試マイスタディ</title>
 
 <style>
 
@@ -59,16 +59,6 @@ body {
   font-size: 1.3em;
 }
 
-.toc-main button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  opacity: 0.5;
-}
-
-.toc-main button:hover {
-  opacity: 1;
-}
 
 
 /* ===== 本文 ===== */
@@ -376,61 +366,31 @@ header.onclick = e => {
     });
 
     if (hitMain || !kw) {
-  const tm = document.createElement("div");
-  tm.className = "toc-main";
-  tm.style.display = "flex";
-  tm.style.justifyContent = "space-between";
-  tm.style.alignItems = "center";
+      const tm = document.createElement("div");
+tm.className = "toc-main";
+tm.textContent = m.title;
 
-  // ===== タイトル（クリックで移動）=====
-const tocTitle = document.createElement("span");
-tocTitle.textContent = m.title;
-tocTitle.style.cursor = "pointer";
-tocTitle.onclick = () => {
-  const target = document.querySelector(
-    `.main-title[data-main-index="${mi}"]`
-  );
-  if (target) target.scrollIntoView({ behavior: "smooth" });
+tm.onclick = () => {
+  const t = prompt("大項目名を変更", m.title);
+  if (!t) return;
+  m.title = t;
+  save(); render();
 };
-  title.style.cursor = "pointer";
-  title.onclick = () => {
-    // 本文側の大項目へ移動
-    const target = document.querySelector(
-      `.main-title[data-main-index="${mi}"]`
-    );
-    if (target) target.scrollIntoView({ behavior: "smooth" });
-  };
 
-  // ===== 編集ボタン =====
-  const edit = document.createElement("button");
-  edit.textContent = "✏️";
-  edit.style.fontSize = "0.9em";
-  edit.style.opacity = "0.6";
-  edit.onclick = e => {
-    e.stopPropagation();
-    const t = prompt("大項目名を変更", m.title);
-    if (!t) return;
-    m.title = t;
-    save(); render();
-  };
-
-  tm.append(tocTitle, edit);
-  toc.appendChild(tm);
-}
+toc.appendChild(tm);
 
       const mt = document.createElement("div");
 mt.className = "main-title";
-mt.dataset.mainIndex = mi;
 
-const mainTitle = document.createElement("span");
-mainTitle.textContent = m.title;
+const title = document.createElement("span");
+title.textContent = m.title;
 
 const del = document.createElement("button");
 del.textContent = "🗑";
 del.style.marginLeft = "8px";
 del.onclick = () => deleteMain(mi);
 
-mt.append(mainTitle, del);
+mt.append(title, del);
 
 mt.onclick = () => {
   const t = prompt("大項目名を変更", m.title);
@@ -624,23 +584,23 @@ document.addEventListener("keydown", e => {
 
   e.preventDefault();
 
-  // Shift + Enter → セル内改行（確実版）
-  if (e.shiftKey) {
-    const br = document.createElement("br");
-    const range = sel.getRangeAt(0);
+// Shift + Enter → セル内改行（確実版）
+if (e.shiftKey) {
+  const br = document.createElement("br");
+  const range = sel.getRangeAt(0);
 
-    range.deleteContents();
-    range.insertNode(br);
+  range.deleteContents();
+  range.insertNode(br);
 
-    // キャレットを <br> の後ろへ
-    range.setStartAfter(br);
-    range.collapse(true);
-    sel.removeAllRanges();
-    sel.addRange(range);
+  // キャレットを <br> の後ろへ
+  range.setStartAfter(br);
+  range.collapse(true);
+  sel.removeAllRanges();
+  sel.addRange(range);
 
-    save();
-    return;
-  }
+  save();
+  return;
+}
 
   const row = cell.parentElement;
   const table = row.closest("table");
@@ -648,16 +608,15 @@ document.addEventListener("keydown", e => {
   const rowIndex = rows.indexOf(row);
   const colIndex = Array.from(row.cells).indexOf(cell);
 
-  let targetRow;
-
   // 最下行なら新規行追加
+  let targetRow;
   if (rowIndex === rows.length - 1) {
     targetRow = table.insertRow();
     for (let i = 0; i < row.cells.length; i++) {
       const c = targetRow.insertCell();
       c.contentEditable = "true";
-      c.innerHTML = "";
       c.tabIndex = -1;
+      c.innerHTML = "";
     }
   } else {
     targetRow = rows[rowIndex + 1];
@@ -684,3 +643,5 @@ render();
 </script>
 </body>
 </html>
+
+左側の大項目をシングルタップした時はその項目へ移動して、名前変更は横にアイコンでも作ってそれでできるようにしてほしいな
