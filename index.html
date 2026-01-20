@@ -273,7 +273,16 @@ function render() {
       const tocSub = document.createElement("div");
       tocSub.className = "toc-sub";
       tocSub.innerHTML = `<span>${s.checked ? "☑" : "☐"}</span>${s.title}`;
-      tocSub.onclick = () => document.getElementById(id).scrollIntoView();
+      tocSub.onclick = e => {
+  if (e.altKey) {
+    const t = prompt("小項目名を変更", s.title);
+    if (!t) return;
+    s.title = t;
+    save(); render();
+  } else {
+    document.getElementById(id).scrollIntoView();
+  }
+};
       toc.appendChild(tocSub);
 
       const box = document.createElement("div");
@@ -283,7 +292,19 @@ function render() {
       const header = document.createElement("div");
       header.className = "sub-header";
       header.textContent = s.title;
-      header.onclick = () => { s.open = !s.open; save(); render(); };
+
+header.onclick = e => {
+  if (e.altKey) {
+    const t = prompt("小項目名を変更", s.title);
+    if (!t) return;
+    s.title = t;
+    save(); render();
+  } else {
+    s.open = !s.open;
+    save(); render();
+  }
+};
+ render(); };
 
       
 
@@ -305,16 +326,32 @@ function render() {
       subsDom.push(box);
     });
 
-    if (hitMain) {
+    if (hitMain || !kw) {
       const tm = document.createElement("div");
-      tm.className = "toc-main";
-      tm.textContent = m.title;
-      toc.appendChild(tm);
+tm.className = "toc-main";
+tm.textContent = m.title;
+
+tm.onclick = () => {
+  const t = prompt("大項目名を変更", m.title);
+  if (!t) return;
+  m.title = t;
+  save(); render();
+};
+
+toc.appendChild(tm);
 
       const mt = document.createElement("div");
-      mt.className = "main-title";
-      mt.textContent = m.title;
-      main.append(mt);
+mt.className = "main-title";
+mt.textContent = m.title;
+
+mt.onclick = () => {
+  const t = prompt("大項目名を変更", m.title);
+  if (!t) return;
+  m.title = t;
+  save(); render();
+};
+
+main.append(mt);
 
       const btn = document.createElement("button");
       btn.textContent = "＋ 小項目";
