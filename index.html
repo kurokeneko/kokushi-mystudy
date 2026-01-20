@@ -624,23 +624,23 @@ document.addEventListener("keydown", e => {
 
   e.preventDefault();
 
-// Shift + Enter → セル内改行（確実版）
-if (e.shiftKey) {
-  const br = document.createElement("br");
-  const range = sel.getRangeAt(0);
+  // Shift + Enter → セル内改行（確実版）
+  if (e.shiftKey) {
+    const br = document.createElement("br");
+    const range = sel.getRangeAt(0);
 
-  range.deleteContents();
-  range.insertNode(br);
+    range.deleteContents();
+    range.insertNode(br);
 
-  // キャレットを <br> の後ろへ
-  range.setStartAfter(br);
-  range.collapse(true);
-  sel.removeAllRanges();
-  sel.addRange(range);
+    // キャレットを <br> の後ろへ
+    range.setStartAfter(br);
+    range.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(range);
 
-  save();
-  return;
-}
+    save();
+    return;
+  }
 
   const row = cell.parentElement;
   const table = row.closest("table");
@@ -648,15 +648,16 @@ if (e.shiftKey) {
   const rowIndex = rows.indexOf(row);
   const colIndex = Array.from(row.cells).indexOf(cell);
 
-  // 最下行なら新規行追加
   let targetRow;
+
+  // 最下行なら新規行追加
   if (rowIndex === rows.length - 1) {
     targetRow = table.insertRow();
     for (let i = 0; i < row.cells.length; i++) {
       const c = targetRow.insertCell();
       c.contentEditable = "true";
-      c.tabIndex = -1;
       c.innerHTML = "";
+      c.tabIndex = -1;
     }
   } else {
     targetRow = rows[rowIndex + 1];
