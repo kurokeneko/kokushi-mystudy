@@ -133,6 +133,8 @@ td, th {
 <body>
 
 <div id="toc">
+  <button onclick="undo()">↩</button>
+<button onclick="redo()">↪</button>
   <h2>目次</h2>
   <input id="searchBox" placeholder="🔍 検索" oninput="render()">
 
@@ -148,6 +150,11 @@ td, th {
 <div id="main"></div>
 
 <div id="tableToolbar" class="table-toolbar">
+  <button onclick="moveRow(-1)">⬆ 行</button>
+  <button onclick="moveRow(1)">⬇ 行</button>
+  <button onclick="moveCol(-1)">⬅ 列</button>
+  <button onclick="moveCol(1)">➡ 列</button>
+  <hr>
   <button onclick="addRow()">行＋</button>
   <button onclick="addCol()">列＋</button>
   <button onclick="delRow()">行−</button>
@@ -155,13 +162,40 @@ td, th {
 </div>
 
 <script>
+/* =====================
+   基本データ管理
+===================== */
 const KEY = "kokushi-my-study";
 let data = JSON.parse(localStorage.getItem(KEY)) || [];
 
+/* =====================
+   undo / redo 用履歴
+===================== */
+let history = [];
+let historyIndex = -1;
+
+function snapshot() {
+  history = history.slice(0, historyIndex + 1);
+  history.push(JSON.stringify(data));
+  historyIndex++;
+}
+
 function save() {
+  snapshot();
   localStorage.setItem(KEY, JSON.stringify(data));
 }
 
+function saveRaw() {
+  localStorage.setItem(KEY, JSON.stringify(data));
+  render();
+}
+
+/* 初期スナップショット */
+snapshot();
+
+/* =====================
+   大項目・小項目
+===================== */
 function addMain() {
   const t = prompt("大項目名");
   if (!t) return;
@@ -176,6 +210,9 @@ function addSub(mi) {
   save(); render();
 }
 
+/* =====================
+   描画
+===================== */
 function render() {
   const toc = document.getElementById("tocList");
   const main = document.getElementById("main");
@@ -223,11 +260,6 @@ function render() {
         save();
       };
 
-      editor.onkeydown = e => {
-        if (e.metaKey && e.key === "r") { e.preventDefault(); cmd("bold"); }
-        if (e.metaKey && e.key === "u") { e.preventDefault(); cmd("underline"); }
-      };
-
       if (!s.open) editor.style.display = toolbar.style.display = "none";
 
       box.append(header, toolbar, editor);
@@ -255,6 +287,9 @@ function render() {
   });
 }
 
+/* =====================
+   エディタ操作
+===================== */
 function cmd(c) {
   document.execCommand(c);
 }
@@ -262,18 +297,15 @@ function cmd(c) {
 function insertTable() {
   const html = `
   <table>
-    <tr>
-      <td contenteditable="true"></td>
-      <td contenteditable="true"></td>
-    </tr>
-    <tr>
-      <td contenteditable="true"></td>
-      <td contenteditable="true"></td>
-    </tr>
+    <tr><td contenteditable="true"></td><td contenteditable="true"></td></tr>
+    <tr><td contenteditable="true"></td><td contenteditable="true"></td></tr>
   </table>`;
   document.execCommand("insertHTML", false, html);
 }
 
+/* =====================
+   JSON入出力
+===================== */
 function exportJSON() {
   const b = new Blob([JSON.stringify(data, null, 2)]);
   const a = document.createElement("a");
@@ -290,129 +322,122 @@ jsonInput.onchange = e => {
   const r = new FileReader();
   r.onload = () => {
     data = JSON.parse(r.result);
-    save(); render();
+    snapshot();
+    saveRaw();
   };
   r.readAsText(e.target.files[0]);
 };
 
-render();
-
+/* =====================
+   表操作（選択管理）
+===================== */
 let activeTable = null;
+let activeCell = null;
 
 document.addEventListener("click", e => {
   const toolbar = document.getElementById("tableToolbar");
+  const cell = e.target.closest("td, th");
 
-  if (e.target.closest("table")) {
-    activeTable = e.target.closest("table");
+  if (cell) {
+    activeCell = cell;
+    activeTable = cell.closest("table");
+
     toolbar.style.display = "block";
     toolbar.style.top = e.clientY + 10 + "px";
     toolbar.style.left = e.clientX + 10 + "px";
   } else {
     toolbar.style.display = "none";
-    activeTable = null;
+    activeCell = activeTable = null;
   }
 });
 
+/* =====================
+   行・列 追加削除
+===================== */
 function addRow() {
   if (!activeTable) return;
   const row = activeTable.insertRow();
   const cols = activeTable.rows[0].cells.length;
-  for (let i = 0; i < cols; i++) {
-    row.insertCell().innerHTML = "";
-  }
+  for (let i = 0; i < cols; i++) row.insertCell().contentEditable = "true";
   save();
 }
 
 function addCol() {
   if (!activeTable) return;
-  for (const row of activeTable.rows) {
-    row.insertCell().innerHTML = "";
-  }
+  for (const r of activeTable.rows) r.insertCell().contentEditable = "true";
   save();
 }
 
 function delRow() {
-  if (!activeTable) return;
-  if (activeTable.rows.length > 1) {
-    activeTable.deleteRow(-1);
-    save();
-  }
+  if (!activeTable || activeTable.rows.length <= 1) return;
+  activeTable.deleteRow(-1);
+  save();
 }
 
 function delCol() {
   if (!activeTable) return;
   const cols = activeTable.rows[0].cells.length;
   if (cols <= 1) return;
-  for (const row of activeTable.rows) {
-    row.deleteCell(-1);
+  for (const r of activeTable.rows) r.deleteCell(-1);
+  save();
+}
+
+/* =====================
+   行・列 移動（②③⑤⑥）
+===================== */
+function moveRow(dir) {
+  if (!activeCell) return;
+  const row = activeCell.parentElement;
+  const rows = Array.from(activeTable.rows);
+  const i = rows.indexOf(row);
+  const t = i + dir;
+  if (t < 0 || t >= rows.length) return;
+
+  dir === -1
+    ? activeTable.insertBefore(row, rows[t])
+    : activeTable.insertBefore(rows[t], row);
+
+  save();
+}
+
+function moveCol(dir) {
+  if (!activeCell) return;
+  const row = activeCell.parentElement;
+  const c = Array.from(row.cells).indexOf(activeCell);
+  const t = c + dir;
+  if (t < 0 || t >= row.cells.length) return;
+
+  for (const r of activeTable.rows) {
+    const cell = r.cells[c];
+    const ref = r.cells[t];
+    dir === -1
+      ? r.insertBefore(cell, ref)
+      : r.insertBefore(ref, cell);
   }
   save();
 }
 
-document.addEventListener("keydown", e => {
-  const cell = e.target.closest("td, th");
-  if (!cell) return;
-
-  const table = cell.closest("table");
-  const row = cell.parentElement;
-  const rows = Array.from(table.rows);
-  const cells = Array.from(row.cells);
-
-  const r = rows.indexOf(row);
-  const c = cells.indexOf(cell);
-
-  /* Shift+Enter → セル内改行 */
-  if (e.key === "Enter" && e.shiftKey) {
-    document.execCommand("insertLineBreak");
-    e.preventDefault();
-    return;
-  }
-
-  /* Enter → 下のセル */
-  if (e.key === "Enter") {
-    e.preventDefault();
-
-    let targetRow = rows[r + 1];
-
-    // 最下行 → 行追加
-    if (!targetRow) {
-      const newRow = table.insertRow();
-      for (let i = 0; i < cells.length; i++) {
-        const td = newRow.insertCell();
-        td.contentEditable = "true";
-      }
-      targetRow = newRow;
-      save();
-    }
-
-    focusCell(targetRow.cells[c]);
-  }
-
-  /* Tab → 右セル */
-  if (e.key === "Tab") {
-    e.preventDefault();
-
-    let nextCell = cells[c + 1];
-    let nextRow = row;
-
-    if (!nextCell) {
-      nextRow = rows[r + 1] || rows[0];
-      nextCell = nextRow.cells[0];
-    }
-
-    focusCell(nextCell);
-  }
-});
-
-function focusCell(cell) {
-  cell.focus();
-  const range = document.createRange();
-  range.selectNodeContents(cell);
-  range.collapse(true);
-  const sel = window.getSelection();
-  sel.removeAllRanges();
-  sel.addRange(range);
+/* =====================
+   undo / redo（⑦-⑤除外）
+===================== */
+function undo() {
+  if (historyIndex <= 0) return;
+  historyIndex--;
+  data = JSON.parse(history[historyIndex]);
+  saveRaw();
 }
+
+function redo() {
+  if (historyIndex >= history.length - 1) return;
+  historyIndex++;
+  data = JSON.parse(history[historyIndex]);
+  saveRaw();
+}
+
+/* =====================
+   初期描画
+===================== */
+render();
 </script>
 </body>
 </html>
