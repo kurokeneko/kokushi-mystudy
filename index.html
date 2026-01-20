@@ -90,6 +90,10 @@ button {
 
 <div id="toc">
   <h2>目次</h2>
+  <hr>
+<button onclick="exportJSON()">📤 JSONバックアップ</button><br>
+<button onclick="importJSON()">📥 JSON読み込み</button>
+<input type="file" id="jsonInput" accept=".json" style="display:none">
   <button onclick="addMain()">＋ 大項目</button>
   <div id="tocList"></div>
 </div>
@@ -195,6 +199,43 @@ function render() {
 }
 
 render();
+
+function exportJSON() {
+  const blob = new Blob(
+    [JSON.stringify(data, null, 2)],
+    { type: "application/json" }
+  );
+
+  const date = new Date().toISOString().slice(0,10);
+  const filename = `kokushi-backup-${date}.json`;
+
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function importJSON() {
+  document.getElementById("jsonInput").click();
+}
+
+document.getElementById("jsonInput").addEventListener("change", e => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      data = JSON.parse(reader.result);
+      save();
+      alert("読み込み完了！");
+    } catch {
+      alert("JSONファイルが正しくありません");
+    }
+  };
+  reader.readAsText(file);
+});
 </script>
 
 </body>
