@@ -16,7 +16,7 @@ body {
 
 /* ===== 目次 ===== */
 #toc {
-  width: 260px;
+  width: 280px;
   border-right: 1px solid #ccc;
   padding: 10px;
   background: #f7f7f7;
@@ -34,7 +34,7 @@ body {
 
 .toc-sub {
   margin-left: 14px;
-  font-size: 0.9em;
+  font-size: 0.95em;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -42,6 +42,7 @@ body {
 
 .toc-sub span {
   margin-right: 6px;
+  font-size: 1.2em;
 }
 
 /* ===== 本文 ===== */
@@ -52,14 +53,14 @@ body {
 }
 
 .main-title {
-  font-size: 1.4em;
+  font-size: 1.5em;
   margin-top: 28px;
 }
 
 .sub-box {
   border: 1px solid #ddd;
   padding: 10px;
-  margin-top: 10px;
+  margin-top: 12px;
 }
 
 .sub-header {
@@ -71,10 +72,11 @@ body {
 
 .sub-header span {
   font-weight: bold;
+  font-size: 1.05em;
 }
 
 .sub-content {
-  margin-top: 8px;
+  margin-top: 10px;
 }
 
 .sub-content.hidden {
@@ -83,14 +85,25 @@ body {
 
 textarea {
   width: 100%;
-  min-height: 90px;
+  min-height: 120px;
   box-sizing: border-box;
   font-size: 1em;
+  line-height: 1.5;
+  resize: none;
 }
 
 button {
   cursor: pointer;
-  font-size: 0.85em;
+  font-size: 0.9em;
+  margin-top: 4px;
+}
+
+#searchBox {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 6px 0;
+  padding: 6px;
+  font-size: 1em;
 }
 </style>
 </head>
@@ -99,9 +112,13 @@ button {
 
 <div id="toc">
   <h2>目次</h2>
+
+  <input id="searchBox" placeholder="🔍 検索（部分一致）" oninput="render()">
+
   <button onclick="exportJSON()">📤 JSONバックアップ</button><br>
   <button onclick="importJSON()">📥 JSON読み込み</button>
   <input type="file" id="jsonInput" accept=".json" style="display:none"><br><br>
+
   <button onclick="addMain()">＋ 大項目</button>
   <div id="tocList"></div>
 </div>
@@ -146,8 +163,10 @@ function toggleOpen(mi, si) {
   save();
 }
 
-function updateText(mi, si, value) {
-  data[mi].subs[si].text = value;
+function updateText(mi, si, textarea) {
+  data[mi].subs[si].text = textarea.value;
+  textarea.style.height = "auto";
+  textarea.style.height = textarea.scrollHeight + "px";
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
@@ -158,28 +177,31 @@ function scrollToSub(id) {
 function render() {
   const toc = document.getElementById("tocList");
   const main = document.getElementById("main");
+  const keyword = document.getElementById("searchBox").value.toLowerCase();
+
   toc.innerHTML = "";
   main.innerHTML = "";
 
   data.forEach((m, mi) => {
-    /* ===== 目次：大項目 ===== */
-    const tocMain = document.createElement("div");
-    tocMain.className = "toc-main";
-    tocMain.textContent = m.title;
-    toc.appendChild(tocMain);
+    let mainHasHit = false;
 
     /* ===== 本文：大項目 ===== */
     const mainTitle = document.createElement("div");
     mainTitle.className = "main-title";
     mainTitle.textContent = m.title;
-    main.appendChild(mainTitle);
 
     const addSubBtn = document.createElement("button");
     addSubBtn.textContent = "＋ 小項目";
     addSubBtn.onclick = () => addSub(mi);
-    main.appendChild(addSubBtn);
+
+    const subBoxes = [];
 
     m.subs.forEach((s, si) => {
+      const text = (s.title + s.text).toLowerCase();
+      const hit = !keyword || text.includes(keyword);
+      if (!hit) return;
+
+      mainHasHit = true;
       const subId = `sub-${mi}-${si}`;
 
       /* --- 目次：小項目 --- */
@@ -224,13 +246,26 @@ function render() {
 
       const textarea = document.createElement("textarea");
       textarea.value = s.text;
-      textarea.oninput = e => updateText(mi, si, e.target.value);
+      textarea.oninput = () => updateText(mi, si, textarea);
+      setTimeout(() => updateText(mi, si, textarea));
 
       content.appendChild(textarea);
       box.appendChild(header);
       box.appendChild(content);
-      main.appendChild(box);
+      subBoxes.push(box);
     });
+
+    if (mainHasHit) {
+      /* ===== 目次：大項目 ===== */
+      const tocMain = document.createElement("div");
+      tocMain.className = "toc-main";
+      tocMain.textContent = m.title;
+      toc.appendChild(tocMain);
+
+      main.appendChild(mainTitle);
+      main.appendChild(addSubBtn);
+      subBoxes.forEach(b => main.appendChild(b));
+    }
   });
 }
 
@@ -268,5 +303,4 @@ document.getElementById("jsonInput").addEventListener("change", e => {
 });
 </script>
 
-</body>
-</html>
+</
