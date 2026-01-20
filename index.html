@@ -23,9 +23,7 @@ body {
   overflow-y: auto;
 }
 
-#toc h2 {
-  margin-top: 0;
-}
+#toc h2 { margin-top: 0; }
 
 .toc-main {
   font-weight: bold;
@@ -34,7 +32,6 @@ body {
 
 .toc-sub {
   margin-left: 14px;
-  font-size: 0.95em;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -42,7 +39,7 @@ body {
 
 .toc-sub span {
   margin-right: 6px;
-  font-size: 1.2em;
+  font-size: 1.3em;
 }
 
 /* ===== 本文 ===== */
@@ -66,44 +63,41 @@ body {
 .sub-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
   cursor: pointer;
-}
-
-.sub-header span {
   font-weight: bold;
-  font-size: 1.05em;
 }
 
-.sub-content {
+.editor {
   margin-top: 10px;
-}
-
-.sub-content.hidden {
-  display: none;
-}
-
-textarea {
-  width: 100%;
+  border: 1px solid #ccc;
+  padding: 8px;
   min-height: 120px;
-  box-sizing: border-box;
-  font-size: 1em;
-  line-height: 1.5;
-  resize: none;
+  line-height: 1.6;
 }
 
-button {
-  cursor: pointer;
-  font-size: 0.9em;
-  margin-top: 4px;
+.editor:focus {
+  outline: 2px solid #4caf50;
+}
+
+.toolbar button {
+  font-size: 0.85em;
+  margin-right: 6px;
+}
+
+table {
+  border-collapse: collapse;
+  margin: 8px 0;
+}
+td, th {
+  border: 1px solid #666;
+  padding: 6px;
+  min-width: 60px;
 }
 
 #searchBox {
   width: 100%;
-  box-sizing: border-box;
-  margin: 6px 0;
   padding: 6px;
-  font-size: 1em;
+  margin-bottom: 6px;
 }
 </style>
 </head>
@@ -112,13 +106,13 @@ button {
 
 <div id="toc">
   <h2>目次</h2>
+  <input id="searchBox" placeholder="🔍 検索" oninput="render()">
 
-  <input id="searchBox" placeholder="🔍 検索（部分一致）" oninput="render()">
+  <button onclick="exportJSON()">📤 JSON</button>
+  <button onclick="importJSON()">📥 読込</button>
+  <input type="file" id="jsonInput" accept=".json" hidden>
 
-  <button onclick="exportJSON()">📤 JSONバックアップ</button><br>
-  <button onclick="importJSON()">📥 JSON読み込み</button>
-  <input type="file" id="jsonInput" accept=".json" style="display:none"><br><br>
-
+  <hr>
   <button onclick="addMain()">＋ 大項目</button>
   <div id="tocList"></div>
 </div>
@@ -126,182 +120,141 @@ button {
 <div id="main"></div>
 
 <script>
-const STORAGE_KEY = "kokushi-my-study";
-let data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+const KEY = "kokushi-my-study";
+let data = JSON.parse(localStorage.getItem(KEY)) || [];
 
 function save() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  render();
+  localStorage.setItem(KEY, JSON.stringify(data));
 }
 
 function addMain() {
-  const title = prompt("大項目名を入力");
-  if (!title) return;
-  data.push({ title, subs: [] });
-  save();
+  const t = prompt("大項目名");
+  if (!t) return;
+  data.push({ title: t, subs: [] });
+  save(); render();
 }
 
-function addSub(mainIndex) {
-  const title = prompt("小項目名を入力");
-  if (!title) return;
-  data[mainIndex].subs.push({
-    title,
-    text: "",
-    checked: false,
-    open: true
-  });
-  save();
-}
-
-function toggleCheck(mi, si) {
-  data[mi].subs[si].checked = !data[mi].subs[si].checked;
-  save();
-}
-
-function toggleOpen(mi, si) {
-  data[mi].subs[si].open = !data[mi].subs[si].open;
-  save();
-}
-
-function updateText(mi, si, textarea) {
-  data[mi].subs[si].text = textarea.value;
-  textarea.style.height = "auto";
-  textarea.style.height = textarea.scrollHeight + "px";
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-}
-
-function scrollToSub(id) {
-  document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+function addSub(mi) {
+  const t = prompt("小項目名");
+  if (!t) return;
+  data[mi].subs.push({ title: t, html: "", checked: false, open: true });
+  save(); render();
 }
 
 function render() {
   const toc = document.getElementById("tocList");
   const main = document.getElementById("main");
-  const keyword = document.getElementById("searchBox").value.toLowerCase();
-
-  toc.innerHTML = "";
-  main.innerHTML = "";
+  const kw = document.getElementById("searchBox").value.toLowerCase();
+  toc.innerHTML = main.innerHTML = "";
 
   data.forEach((m, mi) => {
-    let mainHasHit = false;
-
-    /* ===== 本文：大項目 ===== */
-    const mainTitle = document.createElement("div");
-    mainTitle.className = "main-title";
-    mainTitle.textContent = m.title;
-
-    const addSubBtn = document.createElement("button");
-    addSubBtn.textContent = "＋ 小項目";
-    addSubBtn.onclick = () => addSub(mi);
-
-    const subBoxes = [];
+    let hitMain = false;
+    const subsDom = [];
 
     m.subs.forEach((s, si) => {
-      const text = (s.title + s.text).toLowerCase();
-      const hit = !keyword || text.includes(keyword);
-      if (!hit) return;
+      if (kw && !(s.title + s.html).toLowerCase().includes(kw)) return;
+      hitMain = true;
+      const id = `sub-${mi}-${si}`;
 
-      mainHasHit = true;
-      const subId = `sub-${mi}-${si}`;
-
-      /* --- 目次：小項目 --- */
       const tocSub = document.createElement("div");
       tocSub.className = "toc-sub";
-      tocSub.onclick = () => scrollToSub(subId);
-
-      const checkIcon = document.createElement("span");
-      checkIcon.textContent = s.checked ? "☑" : "☐";
-      checkIcon.onclick = e => {
-        e.stopPropagation();
-        toggleCheck(mi, si);
-      };
-
-      const label = document.createElement("span");
-      label.textContent = s.title;
-
-      tocSub.appendChild(checkIcon);
-      tocSub.appendChild(label);
+      tocSub.innerHTML = `<span>${s.checked ? "☑" : "☐"}</span>${s.title}`;
+      tocSub.onclick = () => document.getElementById(id).scrollIntoView();
       toc.appendChild(tocSub);
 
-      /* --- 本文：小項目 --- */
       const box = document.createElement("div");
       box.className = "sub-box";
-      box.id = subId;
+      box.id = id;
 
       const header = document.createElement("div");
       header.className = "sub-header";
-      header.onclick = () => toggleOpen(mi, si);
+      header.textContent = s.title;
+      header.onclick = () => { s.open = !s.open; save(); render(); };
 
-      const titleSpan = document.createElement("span");
-      titleSpan.textContent = (s.checked ? "☑ " : "☐ ") + s.title;
+      const toolbar = document.createElement("div");
+      toolbar.className = "toolbar";
+      toolbar.innerHTML = `
+        <button onclick="cmd('bold')">太字</button>
+        <button onclick="cmd('underline')">下線</button>
+        <button onclick="insertTable()">表</button>
+      `;
 
-      const openSpan = document.createElement("span");
-      openSpan.textContent = s.open ? "▼" : "▶";
+      const editor = document.createElement("div");
+      editor.className = "editor";
+      editor.contentEditable = true;
+      editor.innerHTML = s.html;
+      editor.oninput = () => {
+        s.html = editor.innerHTML;
+        save();
+      };
 
-      header.appendChild(titleSpan);
-      header.appendChild(openSpan);
+      editor.onkeydown = e => {
+        if (e.metaKey && e.key === "r") { e.preventDefault(); cmd("bold"); }
+        if (e.metaKey && e.key === "u") { e.preventDefault(); cmd("underline"); }
+      };
 
-      const content = document.createElement("div");
-      content.className = "sub-content" + (s.open ? "" : " hidden");
+      if (!s.open) editor.style.display = toolbar.style.display = "none";
 
-      const textarea = document.createElement("textarea");
-      textarea.value = s.text;
-      textarea.oninput = () => updateText(mi, si, textarea);
-      setTimeout(() => updateText(mi, si, textarea));
-
-      content.appendChild(textarea);
-      box.appendChild(header);
-      box.appendChild(content);
-      subBoxes.push(box);
+      box.append(header, toolbar, editor);
+      subsDom.push(box);
     });
 
-    if (mainHasHit) {
-      /* ===== 目次：大項目 ===== */
-      const tocMain = document.createElement("div");
-      tocMain.className = "toc-main";
-      tocMain.textContent = m.title;
-      toc.appendChild(tocMain);
+    if (hitMain) {
+      const tm = document.createElement("div");
+      tm.className = "toc-main";
+      tm.textContent = m.title;
+      toc.appendChild(tm);
 
-      main.appendChild(mainTitle);
-      main.appendChild(addSubBtn);
-      subBoxes.forEach(b => main.appendChild(b));
+      const mt = document.createElement("div");
+      mt.className = "main-title";
+      mt.textContent = m.title;
+      main.append(mt);
+
+      const btn = document.createElement("button");
+      btn.textContent = "＋ 小項目";
+      btn.onclick = () => addSub(mi);
+      main.append(btn);
+
+      subsDom.forEach(d => main.append(d));
     }
   });
 }
 
-render();
+function cmd(c) {
+  document.execCommand(c);
+}
 
-/* ===== JSONバックアップ ===== */
+function insertTable() {
+  const html = `
+  <table>
+    <tr><th></th><th></th></tr>
+    <tr><td></td><td></td></tr>
+  </table>`;
+  document.execCommand("insertHTML", false, html);
+}
+
 function exportJSON() {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-  const date = new Date().toISOString().slice(0,10);
+  const b = new Blob([JSON.stringify(data, null, 2)]);
   const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `kokushi-backup-${date}.json`;
+  a.href = URL.createObjectURL(b);
+  a.download = "kokushi-backup.json";
   a.click();
-  URL.revokeObjectURL(a.href);
 }
 
 function importJSON() {
-  document.getElementById("jsonInput").click();
+  jsonInput.click();
 }
 
-document.getElementById("jsonInput").addEventListener("change", e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    try {
-      data = JSON.parse(reader.result);
-      save();
-      alert("読み込み完了！");
-    } catch {
-      alert("JSONが不正です");
-    }
+jsonInput.onchange = e => {
+  const r = new FileReader();
+  r.onload = () => {
+    data = JSON.parse(r.result);
+    save(); render();
   };
-  reader.readAsText(file);
-});
-</script>
+  r.readAsText(e.target.files[0]);
+};
 
+render();
+</script>
 </body>
 </html>
