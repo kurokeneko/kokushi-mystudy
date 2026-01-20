@@ -59,6 +59,16 @@ body {
   font-size: 1.3em;
 }
 
+.toc-main button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  opacity: 0.5;
+}
+
+.toc-main button:hover {
+  opacity: 1;
+}
 
 
 /* ===== 本文 ===== */
@@ -366,21 +376,44 @@ header.onclick = e => {
     });
 
     if (hitMain || !kw) {
-      const tm = document.createElement("div");
-tm.className = "toc-main";
-tm.textContent = m.title;
+  const tm = document.createElement("div");
+  tm.className = "toc-main";
+  tm.style.display = "flex";
+  tm.style.justifyContent = "space-between";
+  tm.style.alignItems = "center";
 
-tm.onclick = () => {
-  const t = prompt("大項目名を変更", m.title);
-  if (!t) return;
-  m.title = t;
-  save(); render();
-};
+  // ===== タイトル（クリックで移動）=====
+  const title = document.createElement("span");
+  title.textContent = m.title;
+  title.style.cursor = "pointer";
+  title.onclick = () => {
+    // 本文側の大項目へ移動
+    const target = document.querySelector(
+      `.main-title[data-main-index="${mi}"]`
+    );
+    if (target) target.scrollIntoView({ behavior: "smooth" });
+  };
 
-toc.appendChild(tm);
+  // ===== 編集ボタン =====
+  const edit = document.createElement("button");
+  edit.textContent = "✏️";
+  edit.style.fontSize = "0.9em";
+  edit.style.opacity = "0.6";
+  edit.onclick = e => {
+    e.stopPropagation();
+    const t = prompt("大項目名を変更", m.title);
+    if (!t) return;
+    m.title = t;
+    save(); render();
+  };
+
+  tm.append(title, edit);
+  toc.appendChild(tm);
+}
 
       const mt = document.createElement("div");
 mt.className = "main-title";
+mt.dataset.mainIndex = mi;
 
 const title = document.createElement("span");
 title.textContent = m.title;
