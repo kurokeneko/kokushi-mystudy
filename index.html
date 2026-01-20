@@ -1,88 +1,153 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>看護メモ</title>
-  <style>
-    body { font-family: sans-serif; margin: 20px; }
-    h1 { border-bottom: 2px solid #ccc; }
-    .container { display: flex; gap: 20px; }
-    .menu { width: 25%; }
-    .content { width: 75%; }
-    textarea, input { width: 100%; margin-bottom: 10px; }
-    .item { margin-bottom: 30px; }
-    .item h2 { border-left: 6px solid #4caf50; padding-left: 8px; }
-    button { padding: 6px 10px; }
-  </style>
+<meta charset="UTF-8">
+<title>国試マイスタディ</title>
+<style>
+  body {
+    margin: 0;
+    font-family: sans-serif;
+    display: flex;
+    height: 100vh;
+  }
+  #toc {
+    width: 260px;
+    border-right: 1px solid #ccc;
+    padding: 10px;
+    overflow-y: auto;
+    background: #f7f7f7;
+  }
+  #main {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+  }
+  .toc-section {
+    font-weight: bold;
+    margin-top: 10px;
+  }
+  .toc-item {
+    margin-left: 10px;
+    cursor: pointer;
+    font-size: 0.9em;
+  }
+  .item-title {
+    cursor: pointer;
+    margin-top: 10px;
+    font-weight: bold;
+  }
+  .checked {
+    text-decoration: line-through;
+    opacity: 0.6;
+  }
+  .item-text {
+    margin-left: 20px;
+    padding: 6px;
+    border-left: 3px solid #ddd;
+    min-height: 1em;
+  }
+</style>
 </head>
-
 <body>
 
-<h1>📘 看護メモ</h1>
-
-<div class="container">
-  <!-- 目次 -->
-  <div class="menu">
-    <h3>目次</h3>
-    <ul id="toc"></ul>
-  </div>
-
-  <!-- 本文 -->
-  <div class="content">
-    <input id="title" placeholder="項目タイトル（例：統計）">
-    <textarea id="text" rows="5" placeholder="内容をそのまま書く"></textarea>
-    <button onclick="addMemo()">追加</button>
-
-    <hr>
-    <div id="memos"></div>
-  </div>
-</div>
+<div id="toc"></div>
+<div id="main"></div>
 
 <script>
-  let memos = JSON.parse(localStorage.getItem("memos") || "[]");
-
-  function save() {
-    localStorage.setItem("memos", JSON.stringify(memos));
+/* ===== データ本体（ここだけ最低限いじればOK） ===== */
+const data = [
+  {
+    title: "循環",
+    items: [
+      { title: "心不全", text: "左心不全→肺うっ血", checked: false },
+      { title: "高血圧", text: "本態性が多い", checked: false }
+    ]
+  },
+  {
+    title: "呼吸",
+    items: [
+      { title: "COPD", text: "喫煙が主因", checked: false }
+    ]
   }
+];
 
-  function render() {
-    const toc = document.getElementById("toc");
-    const memosDiv = document.getElementById("memos");
-    toc.innerHTML = "";
-    memosDiv.innerHTML = "";
+/* ===== 保存・復元 ===== */
+const saved = localStorage.getItem("kokushiData");
+if (saved) {
+  const parsed = JSON.parse(saved);
+  data.splice(0, data.length, ...parsed);
+}
 
-    memos.forEach((m, i) => {
-      // 目次
-      const li = document.createElement("li");
-      li.innerHTML = `<a href="#memo-${i}">${m.title}</a>`;
-      toc.appendChild(li);
+function save() {
+  localStorage.setItem("kokushiData", JSON.stringify(data));
+}
 
-      // 本文
-      const div = document.createElement("div");
-      div.className = "item";
-      div.id = `memo-${i}`;
-      div.innerHTML = `
-        <h2>${m.title}</h2>
-        <pre>${m.text}</pre>
-      `;
-      memosDiv.appendChild(div);
+/* ===== 描画 ===== */
+const toc = document.getElementById("toc");
+const main = document.getElementById("main");
+
+function render() {
+  toc.innerHTML = "";
+  main.innerHTML = "";
+
+  data.forEach((section, si) => {
+    // 目次：大項目
+    const tocSection = document.createElement("div");
+    tocSection.textContent = section.title;
+    tocSection.className = "toc-section";
+    toc.appendChild(tocSection);
+
+    section.items.forEach((item, ii) => {
+      // 目次：小項目
+      const tocItem = document.createElement("div");
+      tocItem.textContent = "・" + item.title;
+      tocItem.className = "toc-item";
+      tocItem.onclick = () => {
+        document.getElementById(`s-${si}-i-${ii}`).scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+      };
+      toc.appendChild(tocItem);
     });
-  }
 
-  function addMemo() {
-    const title = document.getElementById("title").value.trim();
-    const text = document.getElementById("text").value.trim();
-    if (!title || !text) return;
+    // 本文：大項目
+    const h2 = document.createElement("h2");
+    h2.textContent = section.title;
+    main.appendChild(h2);
 
-    memos.push({ title, text });
-    save();
-    render();
+    section.items.forEach((item, ii) => {
+      const box = document.createElement("div");
+      box.id = `s-${si}-i-${ii}`;
 
-    document.getElementById("title").value = "";
-    document.getElementById("text").value = "";
-  }
+      // 小項目タイトル（チェック切替）
+      const title = document.createElement("div");
+      title.textContent = item.title;
+      title.className = "item-title" + (item.checked ? " checked" : "");
+      title.onclick = () => {
+        item.checked = !item.checked;
+        save();
+        render();
+      };
 
-  render();
+      // 本文（ワンタッチ編集）
+      const text = document.createElement("div");
+      text.className = "item-text";
+      text.contentEditable = true;
+      text.innerText = item.text;
+      text.oninput = () => {
+        item.text = text.innerText;
+        save();
+      };
+
+      box.appendChild(title);
+      box.appendChild(text);
+      main.appendChild(box);
+    });
+  });
+}
+
+render();
 </script>
 
 </body>
