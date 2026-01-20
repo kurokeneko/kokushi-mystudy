@@ -462,12 +462,23 @@ document.addEventListener("keydown", e => {
 
   e.preventDefault();
 
-  // Shift + Enter → セル内改行
-  if (e.shiftKey) {
-    document.execCommand("insertHTML", false, "<br>");
-    save();
-    return;
-  }
+// Shift + Enter → セル内改行（確実版）
+if (e.shiftKey) {
+  const br = document.createElement("br");
+  const range = sel.getRangeAt(0);
+
+  range.deleteContents();
+  range.insertNode(br);
+
+  // キャレットを <br> の後ろへ
+  range.setStartAfter(br);
+  range.collapse(true);
+  sel.removeAllRanges();
+  sel.addRange(range);
+
+  save();
+  return;
+}
 
   const row = cell.parentElement;
   const table = row.closest("table");
