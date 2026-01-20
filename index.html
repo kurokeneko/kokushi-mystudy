@@ -2,151 +2,193 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>国試マイスタディ</title>
+
 <style>
-  body {
+body {
   margin: 0;
-  font-family: sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   display: flex;
   min-height: 100vh;
   overflow: hidden;
 }
-  #toc {
-    width: 260px;
-    border-right: 1px solid #ccc;
-    padding: 10px;
-    overflow-y: auto;
-    background: #f7f7f7;
-  }
-  #main {
-    flex: 1;
-    padding: 15px;
-    overflow-y: auto;
-  }
-  #toc, #main {
+
+/* ===== 目次 ===== */
+#toc {
+  width: 240px;
+  border-right: 1px solid #ccc;
+  padding: 10px;
+  background: #f7f7f7;
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
 }
-  .toc-section {
-    font-weight: bold;
-    margin-top: 10px;
-  }
-  .toc-item {
-    margin-left: 10px;
-    cursor: pointer;
-    font-size: 0.9em;
-  }
-  .item-title {
-    cursor: pointer;
-    margin-top: 10px;
-    font-weight: bold;
-  }
-  .checked {
-    text-decoration: line-through;
-    opacity: 0.6;
-  }
-  .item-text {
-    margin-left: 20px;
-    padding: 6px;
-    border-left: 3px solid #ddd;
-    min-height: 1em;
-  }
+
+#toc h2 {
+  margin-top: 0;
+}
+
+.toc-main {
+  font-weight: bold;
+  margin-top: 12px;
+}
+
+.toc-sub {
+  margin-left: 14px;
+  font-size: 0.9em;
+  cursor: pointer;
+}
+
+.toc-sub.checked {
+  text-decoration: line-through;
+  color: #888;
+}
+
+/* ===== 本文 ===== */
+#main {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.main-title {
+  font-size: 1.4em;
+  margin-top: 24px;
+}
+
+.sub-box {
+  border: 1px solid #ddd;
+  padding: 10px;
+  margin-top: 10px;
+}
+
+.sub-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sub-header span {
+  font-weight: bold;
+}
+
+textarea {
+  width: 100%;
+  min-height: 90px;
+  margin-top: 6px;
+  box-sizing: border-box;
+  font-size: 1em;
+}
+
+button {
+  cursor: pointer;
+  font-size: 0.85em;
+}
 </style>
 </head>
+
 <body>
 
-<div id="toc"></div>
+<div id="toc">
+  <h2>目次</h2>
+  <button onclick="addMain()">＋ 大項目</button>
+  <div id="tocList"></div>
+</div>
+
 <div id="main"></div>
 
 <script>
-/* ===== データ本体（ここだけ最低限いじればOK） ===== */
-const data = [
-  {
-    title: "循環",
-    items: [
-      { title: "心不全", text: "左心不全→肺うっ血", checked: false },
-      { title: "高血圧", text: "本態性が多い", checked: false }
-    ]
-  },
-  {
-    title: "呼吸",
-    items: [
-      { title: "COPD", text: "喫煙が主因", checked: false }
-    ]
-  }
-];
-
-/* ===== 保存・復元 ===== */
-const saved = localStorage.getItem("kokushiData");
-if (saved) {
-  const parsed = JSON.parse(saved);
-  data.splice(0, data.length, ...parsed);
-}
+const STORAGE_KEY = "kokushi-my-study";
+let data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 
 function save() {
-  localStorage.setItem("kokushiData", JSON.stringify(data));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  render();
 }
 
-/* ===== 描画 ===== */
-const toc = document.getElementById("toc");
-const main = document.getElementById("main");
+function addMain() {
+  const title = prompt("大項目名を入力");
+  if (!title) return;
+  data.push({ title, subs: [] });
+  save();
+}
+
+function addSub(mainIndex) {
+  const title = prompt("小項目名を入力");
+  if (!title) return;
+  data[mainIndex].subs.push({
+    title,
+    text: "",
+    checked: false
+  });
+  save();
+}
+
+function toggleCheck(mi, si) {
+  const sub = data[mi].subs[si];
+  sub.checked = !sub.checked;
+  save();
+}
+
+function updateText(mi, si, value) {
+  data[mi].subs[si].text = value;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
 
 function render() {
+  const toc = document.getElementById("tocList");
+  const main = document.getElementById("main");
   toc.innerHTML = "";
   main.innerHTML = "";
 
-  data.forEach((section, si) => {
-    // 目次：大項目
-    const tocSection = document.createElement("div");
-    tocSection.textContent = section.title;
-    tocSection.className = "toc-section";
-    toc.appendChild(tocSection);
+  data.forEach((m, mi) => {
+    /* ---- 目次：大項目 ---- */
+    const tocMain = document.createElement("div");
+    tocMain.className = "toc-main";
+    tocMain.textContent = m.title;
+    toc.appendChild(tocMain);
 
-    section.items.forEach((item, ii) => {
-      // 目次：小項目
-      const tocItem = document.createElement("div");
-      tocItem.textContent = "・" + item.title;
-      tocItem.className = "toc-item";
-      tocItem.onclick = () => {
-        document.getElementById(`s-${si}-i-${ii}`).scrollIntoView({
-          behavior: "smooth",
-          block: "start"
-        });
-      };
-      toc.appendChild(tocItem);
-    });
+    /* ---- 本文：大項目 ---- */
+    const mainTitle = document.createElement("div");
+    mainTitle.className = "main-title";
+    mainTitle.textContent = m.title;
+    main.appendChild(mainTitle);
 
-    // 本文：大項目
-    const h2 = document.createElement("h2");
-    h2.textContent = section.title;
-    main.appendChild(h2);
+    const addSubBtn = document.createElement("button");
+    addSubBtn.textContent = "＋ 小項目";
+    addSubBtn.onclick = () => addSub(mi);
+    main.appendChild(addSubBtn);
 
-    section.items.forEach((item, ii) => {
+    m.subs.forEach((s, si) => {
+      /* 目次：小項目 */
+      const tocSub = document.createElement("div");
+      tocSub.className = "toc-sub" + (s.checked ? " checked" : "");
+      tocSub.textContent = "・" + s.title;
+      tocSub.onclick = () => toggleCheck(mi, si);
+      toc.appendChild(tocSub);
+
+      /* 本文：小項目 */
       const box = document.createElement("div");
-      box.id = `s-${si}-i-${ii}`;
+      box.className = "sub-box";
 
-      // 小項目タイトル（チェック切替）
-      const title = document.createElement("div");
-      title.textContent = item.title;
-      title.className = "item-title" + (item.checked ? " checked" : "");
-      title.onclick = () => {
-        item.checked = !item.checked;
-        save();
-        render();
-      };
+      const header = document.createElement("div");
+      header.className = "sub-header";
 
-      // 本文（ワンタッチ編集）
-      const text = document.createElement("div");
-      text.className = "item-text";
-      text.contentEditable = true;
-      text.innerText = item.text;
-      text.oninput = () => {
-        item.text = text.innerText;
-        save();
-      };
+      const titleSpan = document.createElement("span");
+      titleSpan.textContent = s.title;
 
-      box.appendChild(title);
-      box.appendChild(text);
+      const checkBtn = document.createElement("button");
+      checkBtn.textContent = s.checked ? "✔︎ 解除" : "✔︎ 完了";
+      checkBtn.onclick = () => toggleCheck(mi, si);
+
+      header.appendChild(titleSpan);
+      header.appendChild(checkBtn);
+
+      const textarea = document.createElement("textarea");
+      textarea.value = s.text;
+      textarea.oninput = e => updateText(mi, si, e.target.value);
+
+      box.appendChild(header);
+      box.appendChild(textarea);
       main.appendChild(box);
     });
   });
