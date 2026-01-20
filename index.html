@@ -157,6 +157,19 @@ html, body {
   overflow-y: auto;
 }
 
+.sub-header button,
+.main-title button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.sub-header button:hover,
+.main-title button:hover {
+  opacity: 1;
+}
+
 </style>
 </head>
 
@@ -253,6 +266,21 @@ function addSub(mi) {
 }
 
 /* =====================
+   削除
+===================== */
+function deleteMain(mi) {
+  if (!confirm(`「${data[mi].title}」を削除しますか？\n（中の小項目も全て削除されます）`)) return;
+  data.splice(mi, 1);
+  save(); render();
+}
+
+function deleteSub(mi, si) {
+  if (!confirm(`「${data[mi].subs[si].title}」を削除しますか？`)) return;
+  data[mi].subs.splice(si, 1);
+  save(); render();
+}
+
+/* =====================
    描画
 ===================== */
 function render() {
@@ -290,8 +318,20 @@ function render() {
       box.id = id;
 
       const header = document.createElement("div");
-      header.className = "sub-header";
-      header.textContent = s.title;
+header.className = "sub-header";
+
+const title = document.createElement("span");
+title.textContent = s.title;
+
+const del = document.createElement("button");
+del.textContent = "🗑";
+del.style.fontSize = "0.9em";
+del.onclick = e => {
+  e.stopPropagation(); // ← 開閉クリックを防ぐ
+  deleteSub(mi, si);
+};
+
+header.append(title, del);
 
 header.onclick = e => {
   if (e.altKey) {
@@ -341,7 +381,16 @@ toc.appendChild(tm);
 
       const mt = document.createElement("div");
 mt.className = "main-title";
-mt.textContent = m.title;
+
+const title = document.createElement("span");
+title.textContent = m.title;
+
+const del = document.createElement("button");
+del.textContent = "🗑";
+del.style.marginLeft = "8px";
+del.onclick = () => deleteMain(mi);
+
+mt.append(title, del);
 
 mt.onclick = () => {
   const t = prompt("大項目名を変更", m.title);
