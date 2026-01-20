@@ -383,8 +383,15 @@ header.onclick = e => {
   tm.style.alignItems = "center";
 
   // ===== タイトル（クリックで移動）=====
-  const title = document.createElement("span");
-  title.textContent = m.title;
+const tocTitle = document.createElement("span");
+tocTitle.textContent = m.title;
+tocTitle.style.cursor = "pointer";
+tocTitle.onclick = () => {
+  const target = document.querySelector(
+    `.main-title[data-main-index="${mi}"]`
+  );
+  if (target) target.scrollIntoView({ behavior: "smooth" });
+};
   title.style.cursor = "pointer";
   title.onclick = () => {
     // 本文側の大項目へ移動
@@ -407,7 +414,7 @@ header.onclick = e => {
     save(); render();
   };
 
-  tm.append(title, edit);
+  tm.append(tocTitle, edit);
   toc.appendChild(tm);
 }
 
@@ -415,15 +422,15 @@ header.onclick = e => {
 mt.className = "main-title";
 mt.dataset.mainIndex = mi;
 
-const title = document.createElement("span");
-title.textContent = m.title;
+const mainTitle = document.createElement("span");
+mainTitle.textContent = m.title;
 
 const del = document.createElement("button");
 del.textContent = "🗑";
 del.style.marginLeft = "8px";
 del.onclick = () => deleteMain(mi);
 
-mt.append(title, del);
+mt.append(mainTitle, del);
 
 mt.onclick = () => {
   const t = prompt("大項目名を変更", m.title);
