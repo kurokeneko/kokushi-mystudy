@@ -5,11 +5,12 @@
 <title>国試マイスタディ</title>
 <style>
   body {
-    margin: 0;
-    font-family: sans-serif;
-    display: flex;
-    height: 100vh;
-  }
+  margin: 0;
+  font-family: sans-serif;
+  display: flex;
+  min-height: 100vh;
+  overflow: hidden;
+}
   #toc {
     width: 260px;
     border-right: 1px solid #ccc;
@@ -22,6 +23,10 @@
     padding: 15px;
     overflow-y: auto;
   }
+  #toc, #main {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
   .toc-section {
     font-weight: bold;
     margin-top: 10px;
