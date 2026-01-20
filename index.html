@@ -386,17 +386,23 @@ function delCol() {
    行・列 移動（②③⑤⑥）
 ===================== */
 function moveRow(dir) {
-  if (!activeCell) return;
+  if (!activeCell || !activeTable) return;
+
   const row = activeCell.parentElement;
   const rows = Array.from(activeTable.rows);
-  const i = rows.indexOf(row);
-  const t = i + dir;
-  if (t < 0 || t >= rows.length) return;
+  const index = rows.indexOf(row);
 
-  dir === -1
-    ? activeTable.insertBefore(row, rows[t])
-    : activeTable.insertBefore(rows[t], row);
+  // 上限・下限チェック
+  if (dir === -1 && index === 0) return;
+  if (dir === 1 && index === rows.length - 1) return;
 
+  const targetIndex = index + dir;
+  const reference =
+    dir === -1
+      ? rows[targetIndex]                  // 上へ → 対象行の前
+      : rows[targetIndex].nextSibling;     // 下へ → 対象行の「次」
+
+  activeTable.insertBefore(row, reference);
   save();
 }
 
