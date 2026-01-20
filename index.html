@@ -440,6 +440,49 @@ function redo() {
   saveRaw();
 }
 
+document.addEventListener("keydown", e => {
+  const cell = e.target.closest("td, th");
+  if (!cell) return;
+
+  // Shift + Enter → セル内改行
+  if (e.key === "Enter" && e.shiftKey) {
+    e.preventDefault();
+    document.execCommand("insertHTML", false, "<br>");
+    save();
+    return;
+  }
+
+  // Enter のみ
+  if (e.key === "Enter") {
+    e.preventDefault();
+
+    const row = cell.parentElement;
+    const table = row.closest("table");
+    const rows = Array.from(table.rows);
+    const rowIndex = rows.indexOf(row);
+
+    // 最下行なら → 新しい行を追加して移動
+    if (rowIndex === rows.length - 1) {
+      const newRow = table.insertRow();
+      for (let i = 0; i < row.cells.length; i++) {
+        const c = newRow.insertCell();
+        c.contentEditable = "true";
+        c.innerHTML = "";
+      }
+
+      // 同じ列へフォーカス
+      const colIndex = Array.from(row.cells).indexOf(cell);
+      newRow.cells[colIndex].focus();
+    } else {
+      // 下の行の同じ列へ移動
+      const colIndex = Array.from(row.cells).indexOf(cell);
+      rows[rowIndex + 1].cells[colIndex].focus();
+    }
+
+    save();
+  }
+});
+
 /* =====================
    初期描画
 ===================== */
