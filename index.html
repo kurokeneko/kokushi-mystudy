@@ -16,7 +16,7 @@ body {
 
 /* ===== 目次 ===== */
 #toc {
-  width: 240px;
+  width: 260px;
   border-right: 1px solid #ccc;
   padding: 10px;
   background: #f7f7f7;
@@ -29,18 +29,19 @@ body {
 
 .toc-main {
   font-weight: bold;
-  margin-top: 12px;
+  margin-top: 14px;
 }
 
 .toc-sub {
   margin-left: 14px;
   font-size: 0.9em;
   cursor: pointer;
+  display: flex;
+  align-items: center;
 }
 
-.toc-sub.checked {
-  text-decoration: line-through;
-  color: #888;
+.toc-sub span {
+  margin-right: 6px;
 }
 
 /* ===== 本文 ===== */
@@ -52,7 +53,7 @@ body {
 
 .main-title {
   font-size: 1.4em;
-  margin-top: 24px;
+  margin-top: 28px;
 }
 
 .sub-box {
@@ -65,16 +66,24 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  cursor: pointer;
 }
 
 .sub-header span {
   font-weight: bold;
 }
 
+.sub-content {
+  margin-top: 8px;
+}
+
+.sub-content.hidden {
+  display: none;
+}
+
 textarea {
   width: 100%;
   min-height: 90px;
-  margin-top: 6px;
   box-sizing: border-box;
   font-size: 1em;
 }
@@ -90,10 +99,9 @@ button {
 
 <div id="toc">
   <h2>目次</h2>
-  <hr>
-<button onclick="exportJSON()">📤 JSONバックアップ</button><br>
-<button onclick="importJSON()">📥 JSON読み込み</button>
-<input type="file" id="jsonInput" accept=".json" style="display:none">
+  <button onclick="exportJSON()">📤 JSONバックアップ</button><br>
+  <button onclick="importJSON()">📥 JSON読み込み</button>
+  <input type="file" id="jsonInput" accept=".json" style="display:none"><br><br>
   <button onclick="addMain()">＋ 大項目</button>
   <div id="tocList"></div>
 </div>
@@ -122,20 +130,29 @@ function addSub(mainIndex) {
   data[mainIndex].subs.push({
     title,
     text: "",
-    checked: false
+    checked: false,
+    open: true
   });
   save();
 }
 
 function toggleCheck(mi, si) {
-  const sub = data[mi].subs[si];
-  sub.checked = !sub.checked;
+  data[mi].subs[si].checked = !data[mi].subs[si].checked;
+  save();
+}
+
+function toggleOpen(mi, si) {
+  data[mi].subs[si].open = !data[mi].subs[si].open;
   save();
 }
 
 function updateText(mi, si, value) {
   data[mi].subs[si].text = value;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function scrollToSub(id) {
+  document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
 }
 
 function render() {
@@ -145,13 +162,13 @@ function render() {
   main.innerHTML = "";
 
   data.forEach((m, mi) => {
-    /* ---- 目次：大項目 ---- */
+    /* ===== 目次：大項目 ===== */
     const tocMain = document.createElement("div");
     tocMain.className = "toc-main";
     tocMain.textContent = m.title;
     toc.appendChild(tocMain);
 
-    /* ---- 本文：大項目 ---- */
+    /* ===== 本文：大項目 ===== */
     const mainTitle = document.createElement("div");
     mainTitle.className = "main-title";
     mainTitle.textContent = m.title;
@@ -163,36 +180,55 @@ function render() {
     main.appendChild(addSubBtn);
 
     m.subs.forEach((s, si) => {
-      /* 目次：小項目 */
+      const subId = `sub-${mi}-${si}`;
+
+      /* --- 目次：小項目 --- */
       const tocSub = document.createElement("div");
-      tocSub.className = "toc-sub" + (s.checked ? " checked" : "");
-      tocSub.textContent = "・" + s.title;
-      tocSub.onclick = () => toggleCheck(mi, si);
+      tocSub.className = "toc-sub";
+      tocSub.onclick = () => scrollToSub(subId);
+
+      const checkIcon = document.createElement("span");
+      checkIcon.textContent = s.checked ? "☑" : "☐";
+      checkIcon.onclick = e => {
+        e.stopPropagation();
+        toggleCheck(mi, si);
+      };
+
+      const label = document.createElement("span");
+      label.textContent = s.title;
+
+      tocSub.appendChild(checkIcon);
+      tocSub.appendChild(label);
       toc.appendChild(tocSub);
 
-      /* 本文：小項目 */
+      /* --- 本文：小項目 --- */
       const box = document.createElement("div");
       box.className = "sub-box";
+      box.id = subId;
 
       const header = document.createElement("div");
       header.className = "sub-header";
+      header.onclick = () => toggleOpen(mi, si);
 
       const titleSpan = document.createElement("span");
-      titleSpan.textContent = s.title;
+      titleSpan.textContent = (s.checked ? "☑ " : "☐ ") + s.title;
 
-      const checkBtn = document.createElement("button");
-      checkBtn.textContent = s.checked ? "✔︎ 解除" : "✔︎ 完了";
-      checkBtn.onclick = () => toggleCheck(mi, si);
+      const openSpan = document.createElement("span");
+      openSpan.textContent = s.open ? "▼" : "▶";
 
       header.appendChild(titleSpan);
-      header.appendChild(checkBtn);
+      header.appendChild(openSpan);
+
+      const content = document.createElement("div");
+      content.className = "sub-content" + (s.open ? "" : " hidden");
 
       const textarea = document.createElement("textarea");
       textarea.value = s.text;
       textarea.oninput = e => updateText(mi, si, e.target.value);
 
+      content.appendChild(textarea);
       box.appendChild(header);
-      box.appendChild(textarea);
+      box.appendChild(content);
       main.appendChild(box);
     });
   });
@@ -200,18 +236,13 @@ function render() {
 
 render();
 
+/* ===== JSONバックアップ ===== */
 function exportJSON() {
-  const blob = new Blob(
-    [JSON.stringify(data, null, 2)],
-    { type: "application/json" }
-  );
-
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   const date = new Date().toISOString().slice(0,10);
-  const filename = `kokushi-backup-${date}.json`;
-
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = filename;
+  a.download = `kokushi-backup-${date}.json`;
   a.click();
   URL.revokeObjectURL(a.href);
 }
@@ -223,7 +254,6 @@ function importJSON() {
 document.getElementById("jsonInput").addEventListener("change", e => {
   const file = e.target.files[0];
   if (!file) return;
-
   const reader = new FileReader();
   reader.onload = () => {
     try {
@@ -231,7 +261,7 @@ document.getElementById("jsonInput").addEventListener("change", e => {
       save();
       alert("読み込み完了！");
     } catch {
-      alert("JSONファイルが正しくありません");
+      alert("JSONが不正です");
     }
   };
   reader.readAsText(file);
