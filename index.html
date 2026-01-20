@@ -20,8 +20,8 @@ body {
   margin: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   display: flex;
-  min-height: 100vh;
-  overflow: hidden;
+  height: 100vh;
+  overflow: hidden; /* ← bodyは絶対にスクロールさせない */
 }
 
 /* ===== 目次 ===== */
@@ -30,7 +30,14 @@ body {
   border-right: 1px solid #ccc;
   padding: 10px;
   background: #f7f7f7;
-  overflow-y: auto;
+  overflow-y: auto;   /* 左は左でスクロール */
+}
+
+#content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* ← 中で分業 */
 }
 
 #toc h2 { margin-top: 0; }
@@ -61,7 +68,7 @@ body {
 #main {
   flex: 1;
   padding: 16px;
-  overflow-y: auto;
+  overflow-y: auto;  /* ← 右側スクロールはここだけ */
 }
 
 .main-title {
@@ -174,6 +181,7 @@ html, body {
   <div id="tocList"></div>
 </div>
 
+<div id="content">
 <div id="editorToolbar" class="toolbar-global">
   <button onclick="cmd('bold')">太字</button>
   <button onclick="cmd('underline')">下線</button>
@@ -181,6 +189,7 @@ html, body {
 </div>
 
 <div id="main"></div>
+</div>
 
 <div id="tableToolbar" class="table-toolbar">
   <button onclick="moveRow(-1)">⬆ 行</button>
