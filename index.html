@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>看護メモ</title>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    h1 { border-bottom: 2px solid #ccc; }
+    .container { display: flex; gap: 20px; }
+    .menu { width: 25%; }
+    .content { width: 75%; }
+    textarea, input { width: 100%; margin-bottom: 10px; }
+    .item { margin-bottom: 30px; }
+    .item h2 { border-left: 6px solid #4caf50; padding-left: 8px; }
+    button { padding: 6px 10px; }
+  </style>
+</head>
+
+<body>
+
+<h1>📘 看護メモ</h1>
+
+<div class="container">
+  <!-- 目次 -->
+  <div class="menu">
+    <h3>目次</h3>
+    <ul id="toc"></ul>
+  </div>
+
+  <!-- 本文 -->
+  <div class="content">
+    <input id="title" placeholder="項目タイトル（例：統計）">
+    <textarea id="text" rows="5" placeholder="内容をそのまま書く"></textarea>
+    <button onclick="addMemo()">追加</button>
+
+    <hr>
+    <div id="memos"></div>
+  </div>
+</div>
+
+<script>
+  let memos = JSON.parse(localStorage.getItem("memos") || "[]");
+
+  function save() {
+    localStorage.setItem("memos", JSON.stringify(memos));
+  }
+
+  function render() {
+    const toc = document.getElementById("toc");
+    const memosDiv = document.getElementById("memos");
+    toc.innerHTML = "";
+    memosDiv.innerHTML = "";
+
+    memos.forEach((m, i) => {
+      // 目次
+      const li = document.createElement("li");
+      li.innerHTML = `<a href="#memo-${i}">${m.title}</a>`;
+      toc.appendChild(li);
+
+      // 本文
+      const div = document.createElement("div");
+      div.className = "item";
+      div.id = `memo-${i}`;
+      div.innerHTML = `
+        <h2>${m.title}</h2>
+        <pre>${m.text}</pre>
+      `;
+      memosDiv.appendChild(div);
+    });
+  }
+
+  function addMemo() {
+    const title = document.getElementById("title").value.trim();
+    const text = document.getElementById("text").value.trim();
+    if (!title || !text) return;
+
+    memos.push({ title, text });
+    save();
+    render();
+
+    document.getElementById("title").value = "";
+    document.getElementById("text").value = "";
+  }
+
+  render();
+</script>
+
+</body>
+</html>
