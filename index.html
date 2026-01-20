@@ -155,17 +155,15 @@ html, body {
 
 <body>
 
-<div id="editorToolbar" class="toolbar-global">
-  <button onclick="cmd('bold')">太字</button>
-  <button onclick="cmd('underline')">下線</button>
-  <button onclick="insertTable()">表</button>
-</div>
+
 
 <div id="toc">
   <button onclick="undo()">↩</button>
 <button onclick="redo()">↪</button>
   <h2>目次</h2>
   <input id="searchBox" placeholder="🔍 検索" oninput="render()">
+
+
 
   <button onclick="exportJSON()">📤 JSON</button>
   <button onclick="importJSON()">📥 読込</button>
@@ -174,6 +172,12 @@ html, body {
   <hr>
   <button onclick="addMain()">＋ 大項目</button>
   <div id="tocList"></div>
+</div>
+
+<div id="editorToolbar" class="toolbar-global">
+  <button onclick="cmd('bold')">太字</button>
+  <button onclick="cmd('underline')">下線</button>
+  <button onclick="insertTable()">表</button>
 </div>
 
 <div id="main"></div>
