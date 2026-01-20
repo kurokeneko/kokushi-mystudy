@@ -99,6 +99,34 @@ td, th {
   padding: 6px;
   margin-bottom: 6px;
 }
+
+/* ===== 表編集 ===== */
+.table-toolbar {
+  position: fixed;
+  background: #333;
+  color: #fff;
+  padding: 6px;
+  border-radius: 6px;
+  font-size: 12px;
+  display: none;
+  z-index: 9999;
+}
+
+.table-toolbar button {
+  margin: 2px;
+  font-size: 12px;
+}
+
+/* 列幅ドラッグ */
+table {
+  table-layout: fixed;
+}
+
+td, th {
+  resize: horizontal;
+  overflow: auto;
+}
+
 </style>
 </head>
 
@@ -118,6 +146,13 @@ td, th {
 </div>
 
 <div id="main"></div>
+
+<div id="tableToolbar" class="table-toolbar">
+  <button onclick="addRow()">行＋</button>
+  <button onclick="addCol()">列＋</button>
+  <button onclick="delRow()">行−</button>
+  <button onclick="delCol()">列−</button>
+</div>
 
 <script>
 const KEY = "kokushi-my-study";
@@ -255,6 +290,58 @@ jsonInput.onchange = e => {
 };
 
 render();
+
+let activeTable = null;
+
+document.addEventListener("click", e => {
+  const toolbar = document.getElementById("tableToolbar");
+
+  if (e.target.closest("table")) {
+    activeTable = e.target.closest("table");
+    toolbar.style.display = "block";
+    toolbar.style.top = e.clientY + 10 + "px";
+    toolbar.style.left = e.clientX + 10 + "px";
+  } else {
+    toolbar.style.display = "none";
+    activeTable = null;
+  }
+});
+
+function addRow() {
+  if (!activeTable) return;
+  const row = activeTable.insertRow();
+  const cols = activeTable.rows[0].cells.length;
+  for (let i = 0; i < cols; i++) {
+    row.insertCell().innerHTML = "";
+  }
+  save();
+}
+
+function addCol() {
+  if (!activeTable) return;
+  for (const row of activeTable.rows) {
+    row.insertCell().innerHTML = "";
+  }
+  save();
+}
+
+function delRow() {
+  if (!activeTable) return;
+  if (activeTable.rows.length > 1) {
+    activeTable.deleteRow(-1);
+    save();
+  }
+}
+
+function delCol() {
+  if (!activeTable) return;
+  const cols = activeTable.rows[0].cells.length;
+  if (cols <= 1) return;
+  for (const row of activeTable.rows) {
+    row.deleteCell(-1);
+  }
+  save();
+}
 </script>
 </body>
 </html>
