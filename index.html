@@ -6,6 +6,16 @@
 <title>国試マイスタディ</title>
 
 <style>
+
+.toolbar-global {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  border-bottom: 1px solid #ccc;
+  padding: 8px;
+  z-index: 1000;
+}
+
 body {
   margin: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
@@ -42,7 +52,12 @@ body {
   font-size: 1.3em;
 }
 
+
+
 /* ===== 本文 ===== */
+
+
+
 #main {
   flex: 1;
   padding: 16px;
@@ -139,6 +154,12 @@ html, body {
 </head>
 
 <body>
+
+<div id="editorToolbar" class="toolbar-global">
+  <button onclick="cmd('bold')">太字</button>
+  <button onclick="cmd('underline')">下線</button>
+  <button onclick="insertTable()">表</button>
+</div>
 
 <div id="toc">
   <button onclick="undo()">↩</button>
@@ -251,13 +272,7 @@ function render() {
       header.textContent = s.title;
       header.onclick = () => { s.open = !s.open; save(); render(); };
 
-      const toolbar = document.createElement("div");
-      toolbar.className = "toolbar";
-      toolbar.innerHTML = `
-        <button onclick="cmd('bold')">太字</button>
-        <button onclick="cmd('underline')">下線</button>
-        <button onclick="insertTable()">表</button>
-      `;
+      
 
       const editor = document.createElement("div");
       editor.className = "editor";
@@ -267,10 +282,13 @@ function render() {
         s.html = editor.innerHTML;
         save();
       };
+      editor.onfocus = () => {
+  activeEditor = editor;
+};
 
       if (!s.open) editor.style.display = toolbar.style.display = "none";
 
-      box.append(header, toolbar, editor);
+      box.append(header, editor);
       subsDom.push(box);
     });
 
@@ -298,16 +316,21 @@ function render() {
 /* =====================
    エディタ操作
 ===================== */
-function cmd(c) {
+ function cmd(c) {
+  if (!activeEditor) return;
+  activeEditor.focus();
   document.execCommand(c);
 }
 
 function insertTable() {
+  if (!activeEditor) return;
+  activeEditor.focus();
+
   const html = `
-  <table>
-    <tr><td contenteditable="true"></td><td contenteditable="true"></td></tr>
-    <tr><td contenteditable="true"></td><td contenteditable="true"></td></tr>
-  </table>`;
+    <table>
+      <tr><td contenteditable="true"></td><td contenteditable="true"></td></tr>
+      <tr><td contenteditable="true"></td><td contenteditable="true"></td></tr>
+    </table>`;
   document.execCommand("insertHTML", false, html);
 }
 
@@ -341,6 +364,7 @@ jsonInput.onchange = e => {
 ===================== */
 let activeTable = null;
 let activeCell = null;
+let activeEditor = null;
 
 document.addEventListener("click", e => {
   const toolbar = document.getElementById("tableToolbar");
