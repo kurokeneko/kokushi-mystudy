@@ -304,7 +304,6 @@ header.onclick = e => {
     save(); render();
   }
 };
- render(); };
 
       
 
@@ -320,7 +319,7 @@ header.onclick = e => {
   activeEditor = editor;
 };
 
-      if (!s.open) editor.style.display = toolbar.style.display = "none";
+      if (!s.open) editor.style.display = "none";
 
       box.append(header, editor);
       subsDom.push(box);
