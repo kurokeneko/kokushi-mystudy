@@ -262,8 +262,14 @@ function cmd(c) {
 function insertTable() {
   const html = `
   <table>
-    <tr><th></th><th></th></tr>
-    <tr><td></td><td></td></tr>
+    <tr>
+      <td contenteditable="true"></td>
+      <td contenteditable="true"></td>
+    </tr>
+    <tr>
+      <td contenteditable="true"></td>
+      <td contenteditable="true"></td>
+    </tr>
   </table>`;
   document.execCommand("insertHTML", false, html);
 }
@@ -341,6 +347,71 @@ function delCol() {
     row.deleteCell(-1);
   }
   save();
+}
+
+document.addEventListener("keydown", e => {
+  const cell = e.target.closest("td, th");
+  if (!cell) return;
+
+  const table = cell.closest("table");
+  const row = cell.parentElement;
+  const rows = Array.from(table.rows);
+  const cells = Array.from(row.cells);
+
+  const r = rows.indexOf(row);
+  const c = cells.indexOf(cell);
+
+  /* Shift+Enter → セル内改行 */
+  if (e.key === "Enter" && e.shiftKey) {
+    document.execCommand("insertLineBreak");
+    e.preventDefault();
+    return;
+  }
+
+  /* Enter → 下のセル */
+  if (e.key === "Enter") {
+    e.preventDefault();
+
+    let targetRow = rows[r + 1];
+
+    // 最下行 → 行追加
+    if (!targetRow) {
+      const newRow = table.insertRow();
+      for (let i = 0; i < cells.length; i++) {
+        const td = newRow.insertCell();
+        td.contentEditable = "true";
+      }
+      targetRow = newRow;
+      save();
+    }
+
+    focusCell(targetRow.cells[c]);
+  }
+
+  /* Tab → 右セル */
+  if (e.key === "Tab") {
+    e.preventDefault();
+
+    let nextCell = cells[c + 1];
+    let nextRow = row;
+
+    if (!nextCell) {
+      nextRow = rows[r + 1] || rows[0];
+      nextCell = nextRow.cells[0];
+    }
+
+    focusCell(nextCell);
+  }
+});
+
+function focusCell(cell) {
+  cell.focus();
+  const range = document.createRange();
+  range.selectNodeContents(cell);
+  range.collapse(true);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
 }
 </script>
 </body>
