@@ -290,28 +290,51 @@ function render() {
   toc.innerHTML = main.innerHTML = "";
 
   data.forEach((m, mi) => {
-    let hitMain = false;
-    const subsDom = [];
+  let hitMain = false;
 
-    m.subs.forEach((s, si) => {
-      if (kw && !(s.title + s.html).toLowerCase().includes(kw)) return;
-      hitMain = true;
-      const id = `sub-${mi}-${si}`;
-
-      const tocSub = document.createElement("div");
-      tocSub.className = "toc-sub";
-      tocSub.innerHTML = `<span>${s.checked ? "☑" : "☐"}</span>${s.title}`;
-      tocSub.onclick = e => {
-  if (e.altKey) {
-    const t = prompt("小項目名を変更", s.title);
+  // ===== 大項目（先に作る）=====
+  const tm = document.createElement("div");
+  tm.className = "toc-main";
+  tm.textContent = m.title;
+  tm.onclick = () => {
+    const t = prompt("大項目名を変更", m.title);
     if (!t) return;
-    s.title = t;
+    m.title = t;
     save(); render();
-  } else {
-    document.getElementById(id).scrollIntoView();
+  };
+
+  // 小項目を入れる箱
+  const subContainer = document.createElement("div");
+
+  m.subs.forEach((s, si) => {
+    if (kw && !(s.title + s.html).toLowerCase().includes(kw)) return;
+    hitMain = true;
+
+    const id = `sub-${mi}-${si}`;
+
+    const tocSub = document.createElement("div");
+    tocSub.className = "toc-sub";
+    tocSub.innerHTML = `<span>${s.checked ? "☑" : "☐"}</span>${s.title}`;
+    tocSub.onclick = e => {
+      if (e.altKey) {
+        const t = prompt("小項目名を変更", s.title);
+        if (!t) return;
+        s.title = t;
+        save(); render();
+      } else {
+        document.getElementById(id).scrollIntoView();
+      }
+    };
+
+    subContainer.appendChild(tocSub);
+  });
+
+  // 検索条件に合う場合のみ表示
+  if (hitMain || !kw) {
+    toc.appendChild(tm);            // ← 大項目
+    toc.appendChild(subContainer);  // ← その直下に小項目
   }
-};
-      toc.appendChild(tocSub);
+});
 
       const box = document.createElement("div");
       box.className = "sub-box";
