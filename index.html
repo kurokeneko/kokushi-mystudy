@@ -42,9 +42,22 @@ body {
 
 #toc h2 { margin-top: 0; }
 
+.toc-main, .toc-sub {
+  transition: transform 0.1s, background-color 0.1s; /* 滑らかに動かす */
+  user-select: none; /* テキスト選択を防いで操作しやすく */
+}
+
+/* 押した瞬間の演出 */
+.toc-main:active, .toc-sub:active {
+  transform: scale(0.97); /* 少しだけ小さく（沈む感じ） */
+  background-color: #eee; /* 背景を少し暗く */
+}
+
 .toc-main {
   font-weight: bold;
   margin-top: 14px;
+  padding: 4px;
+  border-radius: 4px;
 }
 
 .toc-sub {
@@ -52,7 +65,10 @@ body {
   cursor: pointer;
   display: flex;
   align-items: center;
+  padding: 4px;
+  border-radius: 4px;
 }
+
 
 .toc-sub span {
   margin-right: 6px;
