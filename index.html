@@ -111,6 +111,19 @@ button:hover {
   font-size: 0.95rem;
 }
 
+/* ドラッグ中の要素のスタイル */
+.dragging {
+  opacity: 0.5;
+  background: #e0f0ff !important;
+  border: 1px dashed var(--primary-color);
+}
+
+/* ドロップ先の候補状態 */
+.drag-over {
+  border-top: 3px solid var(--primary-color) !important;
+}
+
+
 .toc-sub:hover {
   background: #f9f9f9;
 }
@@ -452,11 +465,20 @@ header.onclick = e => {
         el.onclick = (e) => { if (!isLong && onClick) onClick(e); };
       };
 
-      // --- 左側の目次（大項目）を追加 ---
+            // --- 左側の目次（大項目）を追加 ---
       const tmToc = document.createElement("div");
       tmToc.className = "toc-main";
-      tmToc.style.cursor = "pointer";
+      tmToc.style.cursor = "grab"; // 掴めることを示すカーソル
       tmToc.textContent = m.title;
+      tmToc.draggable = true; // ドラッグ可能に
+      
+      // 大項目のドラッグイベント設定
+      tmToc.ondragstart = (e) => {
+        e.dataTransfer.setData("text/plain", JSON.stringify({ type: 'main', mi }));
+        tmToc.classList.add("dragging");
+      };
+      tmToc.ondragend = () => tmToc.classList.remove("dragging");
+
 
       // 大項目の動作：短押しでスクロール、長押しで名前変更
       addLongPress(tmToc,
@@ -475,6 +497,17 @@ header.onclick = e => {
         const id = `sub-${mi}-${si}`;
         const tocSub = document.createElement("div");
         tocSub.className = "toc-sub";
+        tocSub.draggable = true;
+        tocSub.style.cursor = "grab";
+
+        // 小項目のドラッグイベント設定
+        tocSub.ondragstart = (e) => {
+          e.dataTransfer.setData("text/plain", JSON.stringify({ type: 'sub', mi, si }));
+          tocSub.classList.add("dragging");
+          e.stopPropagation(); // 大項目のドラッグ発火を防ぐ
+        };
+        tocSub.ondragend = () => tocSub.classList.remove("dragging");
+
 
         // チェックボックスを大きくして押しやすく
         const checkSpan = document.createElement("span");
@@ -567,6 +600,64 @@ function insertTable() {
     </table>`;
   document.execCommand("insertHTML", false, html);
 }
+
+/* =====================
+   ドラッグ＆ドロップ並べ替えロジック
+===================== */
+document.addEventListener("DOMContentLoaded", () => {
+  const tocList = document.getElementById("tocList");
+
+  tocList.ondragover = (e) => {
+    e.preventDefault(); // ドロップを許可
+    const target = e.target.closest(".toc-main, .toc-sub");
+    if (target) target.classList.add("drag-over");
+  };
+
+  tocList.ondragleave = (e) => {
+    const target = e.target.closest(".toc-main, .toc-sub");
+    if (target) target.classList.remove("drag-over");
+  };
+
+  tocList.ondrop = (e) => {
+    e.preventDefault();
+    const target = e.target.closest(".toc-main, .toc-sub");
+    if (target) target.classList.remove("drag-over");
+
+    const rawData = e.dataTransfer.getData("text/plain");
+    if (!rawData) return;
+    const dragData = JSON.parse(rawData);
+
+    // ターゲットのインデックスを取得（要素の並び順から判定）
+    const allItems = Array.from(tocList.querySelectorAll(".toc-main, .toc-sub"));
+    const targetIdx = allItems.indexOf(target);
+    
+    // --- 大項目の並べ替え ---
+    if (dragData.type === 'main') {
+      const movedItem = data.splice(dragData.mi, 1)[0];
+      // 挿入位置の計算（大雑把にターゲットの近くへ）
+      const newIndex = target ? (targetIdx > dragData.mi ? Math.min(data.length, targetIdx) : targetIdx) : data.length;
+      data.splice(newIndex, 0, movedItem);
+    } 
+    // --- 小項目の移動 ---
+    else if (dragData.type === 'sub') {
+      const movedSub = data[dragData.mi].subs.splice(dragData.si, 1)[0];
+      
+      // ドロップ先がどの大項目の配下になるべきか判定
+      let targetMainIdx = 0;
+      if (target) {
+        // ターゲット要素から親の大項目を探すロジック
+        const allMainTitles = Array.from(tocList.querySelectorAll(".toc-main"));
+        const nearestMain = allMainTitles.reverse().find(m => allItems.indexOf(m) <= targetIdx);
+        targetMainIdx = nearestMain ? allMainTitles.reverse().indexOf(nearestMain) : 0;
+      }
+      data[targetMainIdx].subs.push(movedSub);
+    }
+
+    save();
+    render();
+  };
+});
+
 
 /* =====================
    JSON入出力
