@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>国試mystudy</title>
+<title>国試mystudy1
+</title>
 
 <style>
 
@@ -306,6 +307,40 @@ function render() {
   // 小項目を入れる箱
   const subContainer = document.createElement("div");
 
+    // ===== 本文：大項目 =====
+    const mainBox = document.createElement("div");
+    mainBox.className = "main-main";
+
+    const mainTitle = document.createElement("h2");
+    mainTitle.textContent = m.title;
+    mainBox.appendChild(mainTitle);
+
+    // ===== 本文：小項目 =====
+    m.subs.forEach((s, si) => {
+      if (kw && !(s.title + s.html).toLowerCase().includes(kw)) return;
+
+      const id = `sub-${mi}-${si}`;
+
+      const subBox = document.createElement("div");
+      subBox.className = "main-sub";
+      subBox.id = id;
+
+      const subTitle = document.createElement("h3");
+      subTitle.textContent = s.title;
+
+      const subBody = document.createElement("div");
+      subBody.innerHTML = s.html || "";
+
+      subBox.appendChild(subTitle);
+      subBox.appendChild(subBody);
+      mainBox.appendChild(subBox);
+    });
+
+    // ===== 本文を右側に追加 =====
+    if (hitMain || !kw) {
+      main.appendChild(mainBox);
+    }
+
   m.subs.forEach((s, si) => {
     if (kw && !(s.title + s.html).toLowerCase().includes(kw)) return;
     hitMain = true;
@@ -336,6 +371,7 @@ function render() {
   }
 });
 }
+
 
 
 /* =====================
