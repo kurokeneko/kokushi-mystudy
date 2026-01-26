@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>国試mystudy</title>
+<title>国試すたでぃ。</title>
 
 <style>
 /* ===== 全体設定 ===== */
@@ -90,6 +90,12 @@ button:hover {
   outline: 2px solid var(--primary-color);
   border-color: transparent;
 }
+
+#tocList {
+  min-height: 300px; /* 下部へのドロップを容易にするための高さ確保 */
+  padding-bottom: 100px; /* 下に隙間を作る */
+}
+
 
 .toc-main {
   font-weight: bold;
@@ -648,14 +654,31 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- 大項目の並べ替え ---
     if (dragData.type === 'main') {
       const movedItem = data.splice(dragData.mi, 1)[0];
-      // この時点では小項目が消えているので、toc-mainだけを数えれば良い
+      // 目次内のすべての大項目要素を取得
       const allMainEls = Array.from(tocList.querySelectorAll(".toc-main"));
-      let targetIdx = target ? allMainEls.indexOf(target) : data.length;
-      
-      if (isAfter && target) targetIdx++;
-      
-      // 自分の元の位置より後ろに持っていく場合は、spliceで詰まった分を調整
-      const finalIdx = targetIdx > dragData.mi ? targetIdx - 1 : targetIdx;
+      let targetIdx;
+
+      if (target) {
+        // ドロップ先が大項目の場合
+        if (target.classList.contains("toc-main")) {
+          targetIdx = allMainEls.indexOf(target);
+        } else {
+          // ドロップ先が小項目の場合、その小項目が属する直前の「大項目」を探す
+          let current = target;
+          while (current && !current.classList.contains("toc-main")) {
+            current = current.previousElementSibling;
+          }
+          targetIdx = allMainEls.indexOf(current);
+        }
+        // マウスが要素の下半分にあれば、その次の位置へ
+        if (isAfter) targetIdx++;
+      } else {
+        // ターゲットがない（リストの末尾など）場合は最後に追加
+        targetIdx = data.length;
+      }
+
+      // 自分の元の位置より後ろに移動させる場合、削除によってインデックスが1ずれるのを補正
+      const finalIdx = (targetIdx > dragData.mi) ? targetIdx - 1 : targetIdx;
       data.splice(Math.max(0, finalIdx), 0, movedItem);
     } 
 
