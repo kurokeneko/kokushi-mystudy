@@ -188,24 +188,29 @@ th {
   background: #f2f2f2;
 }
 
-/* ===== 表編集ツールバー ===== */
+/* ===== 表編集ツールバー（上部固定バー形式） ===== */
 .table-toolbar {
-  position: fixed;
-  background: #333;
-  color: #fff;
-  padding: 8px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  background: #444; /* グレーで区別 */
+  padding: 8px 20px;
+  border-bottom: 1px solid var(--border-color);
+  display: none; /* JSでflexに切り替え */
+  gap: 8px;
+  align-items: center;
+  z-index: 999;
 }
 
 .table-toolbar button {
-  background: transparent;
+  background: #555;
   color: white;
-  border: 1px solid #555;
+  border: 1px solid #666;
+  font-size: 12px;
+  padding: 4px 10px;
+  min-width: auto;
 }
 
 .table-toolbar button:hover {
-  background: #555;
+  background: var(--primary-color);
+  border-color: var(--primary-color);
 }
 
 
@@ -245,20 +250,34 @@ th {
   <button onclick="insertTable()">表</button>
 </div>
 
+<script>
+  // 挿入場所を特定するために直前の要素のあとに配置します
+  document.addEventListener("DOMContentLoaded", () => {
+    const editorToolbar = document.getElementById("editorToolbar");
+    const tableToolbar = document.createElement("div");
+    tableToolbar.id = "tableToolbar";
+    tableToolbar.className = "table-toolbar";
+    tableToolbar.style.display = "none";
+    tableToolbar.innerHTML = `
+      <button onclick="moveRow(-1)">⬆ 行</button>
+      <button onclick="moveRow(1)">⬇ 行</button>
+      <button onclick="moveCol(-1)">⬅ 列</button>
+      <button onclick="moveCol(1)">➡ 列</button>
+      <span style="color:#666; margin: 0 8px;">|</span>
+      <button onclick="addRow()">行＋</button>
+      <button onclick="addCol()">列＋</button>
+      <button onclick="delRow()">行−</button>
+      <button onclick="delCol()">列−</button>
+    `;
+    editorToolbar.parentNode.insertBefore(tableToolbar, editorToolbar.nextSibling);
+  });
+</script>
+
+
 <div id="main"></div>
 </div>
 
-<div id="tableToolbar" class="table-toolbar">
-  <button onclick="moveRow(-1)">⬆ 行</button>
-  <button onclick="moveRow(1)">⬇ 行</button>
-  <button onclick="moveCol(-1)">⬅ 列</button>
-  <button onclick="moveCol(1)">➡ 列</button>
-  <hr>
-  <button onclick="addRow()">行＋</button>
-  <button onclick="addCol()">列＋</button>
-  <button onclick="delRow()">行−</button>
-  <button onclick="delCol()">列−</button>
-</div>
+
 
 <script>
 /* =====================
@@ -579,18 +598,20 @@ let activeEditor = null;
 
 document.addEventListener("click", e => {
   const toolbar = document.getElementById("tableToolbar");
+  if (!toolbar) return;
   const cell = e.target.closest("td, th");
 
   if (cell) {
     activeCell = cell;
     activeTable = cell.closest("table");
-
-    toolbar.style.display = "block";
-    toolbar.style.top = e.clientY + 10 + "px";
-    toolbar.style.left = e.clientX + 10 + "px";
+    // ポップアップではなく上部に固定表示
+    toolbar.style.display = "flex";
   } else {
-    toolbar.style.display = "none";
-    activeCell = activeTable = null;
+    // ツールバー内のボタンクリック時は消さないように判定
+    if (!e.target.closest("#tableToolbar")) {
+      toolbar.style.display = "none";
+      activeCell = activeTable = null;
+    }
   }
 });
 
