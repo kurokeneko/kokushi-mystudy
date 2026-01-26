@@ -520,9 +520,13 @@ title.textContent = m.title;
 const del = document.createElement("button");
 del.textContent = "🗑";
 del.style.marginLeft = "8px";
-del.onclick = () => deleteMain(mi);
+del.onclick = (e) => {
+  e.stopPropagation(); // これにより親要素(mt)のクリックイベント（名前変更）が発生するのを防ぎます
+  deleteMain(mi);
+};
 
 mt.append(title, del);
+
 
 mt.onclick = () => {
   const t = prompt("大項目名を変更", m.title);
