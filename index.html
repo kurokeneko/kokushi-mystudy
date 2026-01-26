@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>国試mystudy@</title>
+<title>国試mystudy</title>
 
 <style>
 /* ===== 全体設定 ===== */
@@ -112,6 +112,12 @@ button:hover {
 }
 
 /* ドラッグ中の要素のスタイル */
+/* 大項目ドラッグ中に小項目を隠すための設定 */
+.dragging-main-mode .toc-sub {
+  display: none !important;
+}
+
+
 .dragging {
   opacity: 0.3;
 }
@@ -468,8 +474,14 @@ header.onclick = e => {
       tmToc.ondragstart = (e) => {
         e.dataTransfer.setData("text/plain", JSON.stringify({ type: 'main', mi }));
         tmToc.classList.add("dragging");
+        // 目次全体を「大項目移動モード」にする
+        document.getElementById("toc").classList.add("dragging-main-mode");
       };
-      tmToc.ondragend = () => tmToc.classList.remove("dragging");
+      tmToc.ondragend = () => {
+        tmToc.classList.remove("dragging");
+        // モード解除
+        document.getElementById("toc").classList.remove("dragging-main-mode");
+      };
 
 
             // 大項目の動作：クリックで該当箇所へスクロール
@@ -635,16 +647,17 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- 大項目の並べ替え ---
     if (dragData.type === 'main') {
       const movedItem = data.splice(dragData.mi, 1)[0];
+      // この時点では小項目が消えているので、toc-mainだけを数えれば良い
       const allMainEls = Array.from(tocList.querySelectorAll(".toc-main"));
-      // ターゲットが大項目ならそのインデックス、小項目なら所属する親大項目のインデックス
-      const targetMainEl = target ? (target.closest(".toc-main") || target) : null;
-      let targetIdx = targetMainEl ? allMainEls.indexOf(targetMainEl) : data.length;
+      let targetIdx = target ? allMainEls.indexOf(target) : data.length;
       
-      if (isAfter) targetIdx++; 
-      // 自身の移動による添字ズレを補正
+      if (isAfter && target) targetIdx++;
+      
+      // 自分の元の位置より後ろに持っていく場合は、spliceで詰まった分を調整
       const finalIdx = targetIdx > dragData.mi ? targetIdx - 1 : targetIdx;
       data.splice(Math.max(0, finalIdx), 0, movedItem);
     } 
+
     // --- 小項目の移動 ---
     else if (dragData.type === 'sub') {
       const movedSub = data[dragData.mi].subs.splice(dragData.si, 1)[0];
