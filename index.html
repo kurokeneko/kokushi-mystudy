@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>国試マイスタディ</title>
+<title>国試マイスタディ!</title>
 
 <style>
 
@@ -311,7 +311,7 @@ function render() {
     document.getElementById(id).scrollIntoView();
   }
 };
-      toc.appendChild(tocSub);
+      
 
       const box = document.createElement("div");
       box.className = "sub-box";
@@ -364,6 +364,46 @@ header.onclick = e => {
       box.append(header, editor);
       subsDom.push(box);
     });
+
+    // ===== 目次：大項目＋小項目をまとめて追加 =====
+    const tocGroup = document.createElement("div");
+
+    // 大項目
+    const tm = document.createElement("div");
+    tm.className = "toc-main";
+    tm.textContent = m.title;
+    tm.onclick = () => {
+      const t = prompt("大項目名を変更", m.title);
+      if (!t) return;
+      m.title = t;
+      save(); render();
+    };
+    tocGroup.appendChild(tm);
+
+    // 小項目（さっき作った tocSub を順に入れる）
+    m.subs.forEach((s, si) => {
+      if (kw && !(s.title + s.html).toLowerCase().includes(kw)) return;
+
+      const id = `sub-${mi}-${si}`;
+
+      const tocSub = document.createElement("div");
+      tocSub.className = "toc-sub";
+      tocSub.innerHTML = `<span>${s.checked ? "☑" : "☐"}</span>${s.title}`;
+      tocSub.onclick = e => {
+        if (e.altKey) {
+          const t = prompt("小項目名を変更", s.title);
+          if (!t) return;
+          s.title = t;
+          save(); render();
+        } else {
+          document.getElementById(id).scrollIntoView();
+        }
+      };
+
+      tocGroup.appendChild(tocSub);
+    });
+
+    toc.appendChild(tocGroup);
 
     if (hitMain || !kw) {
       const tm = document.createElement("div");
