@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>国家試験mystudy</title>
+<title>国試mystudy</title>
 
 <style>
 /* ===== 全体設定 ===== */
@@ -113,15 +113,14 @@ button:hover {
 
 /* ドラッグ中の要素のスタイル */
 .dragging {
-  opacity: 0.3;
+  opacity: 0.5;
+  background: #e0f0ff !important;
+  border: 1px dashed var(--primary-color);
 }
 
-/* ドロップ先の隙間を示すライン */
-.drag-over-top {
+/* ドロップ先の候補状態 */
+.drag-over {
   border-top: 3px solid var(--primary-color) !important;
-}
-.drag-over-bottom {
-  border-bottom: 3px solid var(--primary-color) !important;
 }
 
 
@@ -594,73 +593,73 @@ function insertTable() {
 document.addEventListener("DOMContentLoaded", () => {
   const tocList = document.getElementById("tocList");
 
-  // ガイドラインを消去する共通処理
-  const clearDragStyles = () => {
-    tocList.querySelectorAll(".drag-over-top, .drag-over-bottom").forEach(el => {
-      el.classList.remove("drag-over-top", "drag-over-bottom");
-    });
-  };
-
   tocList.ondragover = (e) => {
-    e.preventDefault();
+    e.preventDefault(); // ドロップを許可
     const target = e.target.closest(".toc-main, .toc-sub");
-    clearDragStyles();
-    if (target) {
-      const rect = target.getBoundingClientRect();
-      const nextEdge = e.clientY - rect.top > rect.height / 2;
-      target.classList.add(nextEdge ? "drag-over-bottom" : "drag-over-top");
-    }
+    if (target) target.classList.add("drag-over");
   };
 
-  tocList.ondragleave = clearDragStyles;
+  tocList.ondragleave = (e) => {
+    const target = e.target.closest(".toc-main, .toc-sub");
+    if (target) target.classList.remove("drag-over");
+  };
 
   tocList.ondrop = (e) => {
     e.preventDefault();
     const target = e.target.closest(".toc-main, .toc-sub");
-    clearDragStyles();
+    if (target) target.classList.remove("drag-over");
 
     const rawData = e.dataTransfer.getData("text/plain");
     if (!rawData) return;
     const dragData = JSON.parse(rawData);
 
-    // どの要素の「前」か「後」か判定
-    let isAfter = false;
-    if (target) {
-      const rect = target.getBoundingClientRect();
-      isAfter = e.clientY - rect.top > rect.height / 2;
-    }
-
+    // ターゲットのインデックスを取得（要素の並び順から判定）
+    const allItems = Array.from(tocList.querySelectorAll(".toc-main, .toc-sub"));
+    const targetIdx = allItems.indexOf(target);
+    
     // --- 大項目の並べ替え ---
     if (dragData.type === 'main') {
       const movedItem = data.splice(dragData.mi, 1)[0];
-      const allMainEls = Array.from(tocList.querySelectorAll(".toc-main"));
-      let targetIdx = target ? allMainEls.indexOf(target.closest(".toc-main") || target) : data.length;
-      if (isAfter && target.closest(".toc-main")) targetIdx++;
-      data.splice(Math.max(0, targetIdx > dragData.mi ? targetIdx - 1 : targetIdx), 0, movedItem);
+      // 挿入位置の計算（大雑把にターゲットの近くへ）
+      const newIndex = target ? (targetIdx > dragData.mi ? Math.min(data.length, targetIdx) : targetIdx) : data.length;
+      data.splice(newIndex, 0, movedItem);
     } 
-    // --- 小項目の移動 ---
+    
+        // --- 小項目の移動 ---
     else if (dragData.type === 'sub') {
       const movedSub = data[dragData.mi].subs.splice(dragData.si, 1)[0];
-      let tMainIdx = 0, tSubIdx = -1;
+      
+      let targetMainIdx = 0;
+      let targetSubIdx = -1;
 
       if (target) {
-        // ターゲットが属する親を探す
-        data.forEach((m, mi) => {
-          const si = m.subs.findIndex(s => s.title === (target.querySelector("span:last-child")?.textContent || ""));
-          if (si !== -1) { tMainIdx = mi; tSubIdx = si; }
-          if (target.classList.contains("toc-main") && target.textContent === m.title) { tMainIdx = mi; tSubIdx = 0; }
-        });
-        if (isAfter && tSubIdx !== -1) tSubIdx++;
+        const allItems = Array.from(tocList.querySelectorAll(".toc-main, .toc-sub"));
+        // ターゲットが小項目か大項目かによって挿入位置を決める
+        if (target.classList.contains("toc-sub")) {
+          // どの親（大項目）に属しているか、その中での何番目かを探す
+          data.forEach((m, mi) => {
+            const si = m.subs.findIndex(s => s.title === target.textContent.replace(/[☑☐]/g, "").trim());
+            if (si !== -1) { targetMainIdx = mi; targetSubIdx = si; }
+          });
+        } else {
+          // 大項目の上にドロップした場合は、その大項目の先頭へ
+          targetMainIdx = data.findIndex(m => m.title === target.textContent.trim());
+          targetSubIdx = 0;
+        }
       }
-      
-      if (tSubIdx === -1) data[tMainIdx].subs.push(movedSub);
-      else data[tMainIdx].subs.splice(tSubIdx, 0, movedSub);
+
+      // 指定した位置に挿入（位置が特定できなければ末尾）
+      if (targetSubIdx === -1) {
+        data[targetMainIdx].subs.push(movedSub);
+      } else {
+        data[targetMainIdx].subs.splice(targetSubIdx, 0, movedSub);
+      }
     }
 
     save();
     render();
   };
-
+});
 
 
 /* =====================
