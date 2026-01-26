@@ -200,6 +200,11 @@ html, body {
   <input id="searchBox" placeholder="🔍 検索" oninput="render()">
 
 
+    <select id="filterStatus" onchange="render()" style="width: 100%; padding: 6px; margin-bottom: 6px;">
+    <option value="all">すべて</option>
+    <option value="done">完了のみ</option>
+    <option value="todo">未完了のみ</option>
+  </select>
 
   <button onclick="exportJSON()">📤 JSON</button>
   <button onclick="importJSON()">📥 読込</button>
@@ -302,7 +307,9 @@ function deleteSub(mi, si) {
 function render() {
   const toc = document.getElementById("tocList");
   const main = document.getElementById("main");
-  const kw = document.getElementById("searchBox").value.toLowerCase();
+    const kw = document.getElementById("searchBox").value.toLowerCase();
+  const filter = document.getElementById("filterStatus").value; // プルダウンの値を取得
+
   toc.innerHTML = main.innerHTML = "";
 
   data.forEach((m, mi) => {
@@ -310,7 +317,15 @@ function render() {
     const subsDom = [];
 
     m.subs.forEach((s, si) => {
-      if (kw && !(s.title + s.html).toLowerCase().includes(kw)) return;
+            // 検索ワードでの絞り込み
+      const matchesKeyword = !kw || (s.title + s.html).toLowerCase().includes(kw);
+      // プルダウンでの絞り込み
+      const matchesFilter = (filter === "all") || 
+                            (filter === "done" && s.checked) || 
+                            (filter === "todo" && !s.checked);
+
+      if (!matchesKeyword || !matchesFilter) return;
+
       hitMain = true;
       const id = `sub-${mi}-${si}`;
 
