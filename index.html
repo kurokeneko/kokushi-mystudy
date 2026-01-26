@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>国試mystudy</title>
+<title>国試mystudy@</title>
 
 <style>
 /* ===== 全体設定 ===== */
@@ -595,72 +595,91 @@ function insertTable() {
 document.addEventListener("DOMContentLoaded", () => {
   const tocList = document.getElementById("tocList");
 
-  tocList.ondragover = (e) => {
-    e.preventDefault(); // ドロップを許可
-    const target = e.target.closest(".toc-main, .toc-sub");
-    if (target) target.classList.add("drag-over");
+    // ガイドラインを消去する共通処理
+  const clearDragStyles = () => {
+    tocList.querySelectorAll(".drag-over-top, .drag-over-bottom").forEach(el => {
+      el.classList.remove("drag-over-top", "drag-over-bottom");
+    });
   };
 
-  tocList.ondragleave = (e) => {
+  tocList.ondragover = (e) => {
+    e.preventDefault();
     const target = e.target.closest(".toc-main, .toc-sub");
-    if (target) target.classList.remove("drag-over");
+    clearDragStyles();
+    if (target) {
+      const rect = target.getBoundingClientRect();
+      // マウスが要素の半分より下にあるか判定
+      const isBottom = e.clientY - rect.top > rect.height / 2;
+      target.classList.add(isBottom ? "drag-over-bottom" : "drag-over-top");
+    }
   };
+
+  tocList.ondragleave = clearDragStyles;
 
   tocList.ondrop = (e) => {
     e.preventDefault();
     const target = e.target.closest(".toc-main, .toc-sub");
-    if (target) target.classList.remove("drag-over");
+    clearDragStyles();
 
     const rawData = e.dataTransfer.getData("text/plain");
     if (!rawData) return;
     const dragData = JSON.parse(rawData);
 
-    // ターゲットのインデックスを取得（要素の並び順から判定）
-    const allItems = Array.from(tocList.querySelectorAll(".toc-main, .toc-sub"));
-    const targetIdx = allItems.indexOf(target);
-    
+    // 半分より下なら「直後」に挿入するためのフラグ
+    let isAfter = false;
+    if (target) {
+      const rect = target.getBoundingClientRect();
+      isAfter = e.clientY - rect.top > rect.height / 2;
+    }
+
     // --- 大項目の並べ替え ---
     if (dragData.type === 'main') {
       const movedItem = data.splice(dragData.mi, 1)[0];
-      // 挿入位置の計算（大雑把にターゲットの近くへ）
-      const newIndex = target ? (targetIdx > dragData.mi ? Math.min(data.length, targetIdx) : targetIdx) : data.length;
-      data.splice(newIndex, 0, movedItem);
+      const allMainEls = Array.from(tocList.querySelectorAll(".toc-main"));
+      // ターゲットが大項目ならそのインデックス、小項目なら所属する親大項目のインデックス
+      const targetMainEl = target ? (target.closest(".toc-main") || target) : null;
+      let targetIdx = targetMainEl ? allMainEls.indexOf(targetMainEl) : data.length;
+      
+      if (isAfter) targetIdx++; 
+      // 自身の移動による添字ズレを補正
+      const finalIdx = targetIdx > dragData.mi ? targetIdx - 1 : targetIdx;
+      data.splice(Math.max(0, finalIdx), 0, movedItem);
     } 
-    
-        // --- 小項目の移動 ---
+    // --- 小項目の移動 ---
     else if (dragData.type === 'sub') {
       const movedSub = data[dragData.mi].subs.splice(dragData.si, 1)[0];
-      
-      let targetMainIdx = 0;
-      let targetSubIdx = -1;
+      let tMainIdx = 0;
+      let tSubIdx = -1;
 
       if (target) {
-        const allItems = Array.from(tocList.querySelectorAll(".toc-main, .toc-sub"));
-        // ターゲットが小項目か大項目かによって挿入位置を決める
-        if (target.classList.contains("toc-sub")) {
-          // どの親（大項目）に属しているか、その中での何番目かを探す
-          data.forEach((m, mi) => {
-            const si = m.subs.findIndex(s => s.title === target.textContent.replace(/[☑☐]/g, "").trim());
-            if (si !== -1) { targetMainIdx = mi; targetSubIdx = si; }
-          });
-        } else {
-          // 大項目の上にドロップした場合は、その大項目の先頭へ
-          targetMainIdx = data.findIndex(m => m.title === target.textContent.trim());
-          targetSubIdx = 0;
+        // 1. ターゲットが小項目の場合
+        data.forEach((m, mi) => {
+          const si = m.subs.findIndex(s => s.title === (target.querySelector("span:last-child")?.textContent || "").trim());
+          if (si !== -1) {
+            tMainIdx = mi;
+            tSubIdx = isAfter ? si + 1 : si;
+          }
+        });
+
+        // 2. ターゲットが大項目の場合
+        if (tSubIdx === -1) {
+          tMainIdx = data.findIndex(m => m.title === target.textContent.trim());
+          tSubIdx = isAfter ? data[tMainIdx].subs.length : 0;
         }
       }
-
-      // 指定した位置に挿入（位置が特定できなければ末尾）
-      if (targetSubIdx === -1) {
-        data[targetMainIdx].subs.push(movedSub);
+      
+      // 挿入実行
+      if (tSubIdx === -1) {
+        data[tMainIdx].subs.push(movedSub);
       } else {
-        data[targetMainIdx].subs.splice(targetSubIdx, 0, movedSub);
+        data[tMainIdx].subs.splice(tSubIdx, 0, movedSub);
       }
     }
 
     save();
     render();
   };
+
 });
 
 
