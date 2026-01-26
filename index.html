@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>国試マイスタディ!</title>
+<title>国試mystudy</title>
 
 <style>
 /* ===== 全体設定 ===== */
@@ -453,17 +453,7 @@ header.onclick = e => {
 
         // 目次と本文のタイトル表示（検索条件に合う場合のみ）
     if (hitMain || !kw) {
-                  // --- 長押し判定用の共通関数 ---
-      const addLongPress = (el, onLongPress, onClick) => {
-        let timer;
-        let isLong = false;
-        el.onmousedown = el.ontouchstart = (e) => {
-          isLong = false;
-          timer = setTimeout(() => { isLong = true; onLongPress(); }, 500); 
-        };
-        el.onmouseup = el.onmouseleave = el.ontouchend = () => clearTimeout(timer);
-        el.onclick = (e) => { if (!isLong && onClick) onClick(e); };
-      };
+                  
 
             // --- 左側の目次（大項目）を追加 ---
       const tmToc = document.createElement("div");
@@ -480,15 +470,12 @@ header.onclick = e => {
       tmToc.ondragend = () => tmToc.classList.remove("dragging");
 
 
-      // 大項目の動作：短押しでスクロール、長押しで名前変更
-      addLongPress(tmToc,
-        () => { const t = prompt("大項目名を変更", m.title); if (t) { m.title = t; save(); render(); } },
-        () => {
-          // 本文の大項目タイトル（main-title）までスクロール
-          const target = Array.from(main.querySelectorAll('.main-title')).find(el => el.textContent.includes(m.title));
-          if (target) target.scrollIntoView({ behavior: 'smooth' });
-        }
-      );
+            // 大項目の動作：クリックで該当箇所へスクロール
+      tmToc.onclick = () => {
+        const target = Array.from(main.querySelectorAll('.main-title')).find(el => el.textContent.includes(m.title));
+        if (target) target.scrollIntoView({ behavior: 'smooth' });
+      };
+
       toc.appendChild(tmToc);
 
       // --- 左側の目次（小項目）を追加 ---
@@ -524,18 +511,17 @@ header.onclick = e => {
 
         tocSub.append(checkSpan, titleSpan);
         
-        addLongPress(tocSub,
-          () => { const t = prompt("小項目名を変更", s.title); if (t) { s.title = t; save(); render(); } },
-          (e) => {
-            if (e.target === checkSpan) {
-              s.checked = !s.checked;
-              save(); render();
-            } else {
-              const target = document.getElementById(id);
-              if (target) target.scrollIntoView({ behavior: 'smooth' });
-            }
+                // 小項目の動作：チェックボックス、またはクリックでスクロール
+        tocSub.onclick = (e) => {
+          if (e.target === checkSpan) {
+            s.checked = !s.checked;
+            save(); render();
+          } else {
+            const target = document.getElementById(id);
+            if (target) target.scrollIntoView({ behavior: 'smooth' });
           }
-        );
+        };
+
         toc.appendChild(tocSub);
       });
 
