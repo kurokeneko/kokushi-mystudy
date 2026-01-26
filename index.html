@@ -365,59 +365,42 @@ header.onclick = e => {
       subsDom.push(box);
     });
 
-    // ===== 目次：大項目＋小項目をまとめて追加 =====
-    const tocGroup = document.createElement("div");
-
-    // 大項目
-    const tm = document.createElement("div");
-    tm.className = "toc-main";
-    tm.textContent = m.title;
-    tm.onclick = () => {
-      const t = prompt("大項目名を変更", m.title);
-      if (!t) return;
-      m.title = t;
-      save(); render();
-    };
-    tocGroup.appendChild(tm);
-
-    // 小項目（さっき作った tocSub を順に入れる）
-    m.subs.forEach((s, si) => {
-      if (kw && !(s.title + s.html).toLowerCase().includes(kw)) return;
-
-      const id = `sub-${mi}-${si}`;
-
-      const tocSub = document.createElement("div");
-      tocSub.className = "toc-sub";
-      tocSub.innerHTML = `<span>${s.checked ? "☑" : "☐"}</span>${s.title}`;
-      tocSub.onclick = e => {
-        if (e.altKey) {
-          const t = prompt("小項目名を変更", s.title);
-          if (!t) return;
-          s.title = t;
-          save(); render();
-        } else {
-          document.getElementById(id).scrollIntoView();
-        }
-      };
-
-      tocGroup.appendChild(tocSub);
-    });
-
-    toc.appendChild(tocGroup);
-
+        // 目次と本文のタイトル表示（検索条件に合う場合のみ）
     if (hitMain || !kw) {
-      const tm = document.createElement("div");
-tm.className = "toc-main";
-tm.textContent = m.title;
+      // --- 左側の目次（大項目）を追加 ---
+      const tmToc = document.createElement("div");
+      tmToc.className = "toc-main";
+      tmToc.textContent = m.title;
+      tmToc.onclick = () => {
+        const t = prompt("大項目名を変更", m.title);
+        if (t) { m.title = t; save(); render(); }
+      };
+      toc.appendChild(tmToc);
 
-tm.onclick = () => {
-  const t = prompt("大項目名を変更", m.title);
-  if (!t) return;
-  m.title = t;
-  save(); render();
-};
+      // --- 左側の目次（小項目）を追加 ---
+      m.subs.forEach((s, si) => {
+        if (kw && !(s.title + s.html).toLowerCase().includes(kw)) return;
+        const id = `sub-${mi}-${si}`;
+        const tocSub = document.createElement("div");
+        tocSub.className = "toc-sub";
+        // チェック状態を反映
+        tocSub.innerHTML = `<span>${s.checked ? "☑" : "☐"}</span>${s.title}`;
+        
+        // 目次クリックでその場所へスクロール、Alt+クリックで名前変更
+        tocSub.onclick = e => {
+          if (e.altKey) {
+            const t = prompt("小項目名を変更", s.title);
+            if (t) { s.title = t; save(); render(); }
+          } else {
+            const target = document.getElementById(id);
+            if (target) target.scrollIntoView({ behavior: 'smooth' });
+          }
+        };
+        toc.appendChild(tocSub);
+      });
 
-toc.appendChild(tm);
+      // --- 右側の本文エリアの描画開始 ---
+
 
       const mt = document.createElement("div");
 mt.className = "main-title";
