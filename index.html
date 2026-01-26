@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>国試mystudy</title>
+<title>国試mystudy🐈</title>
 
 <style>
 /* ===== 全体設定 ===== */
@@ -380,85 +380,81 @@ function render() {
     let hitMain = false;
     const subsDom = [];
 
+    const subsDomForToc = [];
     m.subs.forEach((s, si) => {
-            // 検索ワードでの絞り込み
       const matchesKeyword = !kw || (s.title + s.html).toLowerCase().includes(kw);
-      // プルダウンでの絞り込み
-      const matchesFilter = (filter === "all") || 
-                            (filter === "done" && s.checked) || 
-                            (filter === "todo" && !s.checked);
-
+      const matchesFilter = (filter === "all") || (filter === "done" && s.checked) || (filter === "todo" && !s.checked);
       if (!matchesKeyword || !matchesFilter) return;
 
       hitMain = true;
       const id = `sub-${mi}-${si}`;
 
+      // 目次用の小項目作成
       const tocSub = document.createElement("div");
       tocSub.className = "toc-sub";
-      tocSub.innerHTML = `<span>${s.checked ? "☑" : "☐"}</span>${s.title}`;
-      tocSub.onclick = e => {
-  if (e.altKey) {
-    const t = prompt("小項目名を変更", s.title);
-    if (!t) return;
-    s.title = t;
-    save(); render();
-  } else {
-    document.getElementById(id).scrollIntoView();
-  }
-};
-      
+      tocSub.draggable = true;
+      tocSub.style.cursor = "grab";
+      tocSub.ondragstart = (e) => {
+        e.dataTransfer.setData("text/plain", JSON.stringify({ type: 'sub', mi, si }));
+        tocSub.classList.add("dragging");
+        e.stopPropagation();
+      };
+      tocSub.ondragend = () => tocSub.classList.remove("dragging");
 
+      const checkSpan = document.createElement("span");
+      checkSpan.textContent = s.checked ? "☑" : "☐";
+      checkSpan.style.color = s.checked ? "#4caf50" : "#999";
+      checkSpan.style.fontSize = "1.5em";
+      checkSpan.style.marginRight = "10px";
+      checkSpan.style.display = "inline-block";
+      
+      const titleSpan = document.createElement("span");
+      titleSpan.textContent = s.title;
+      titleSpan.style.color = s.checked ? "#888" : "inherit";
+      
+      tocSub.append(checkSpan, titleSpan);
+      tocSub.onclick = (e) => {
+        if (e.target === checkSpan) {
+          s.checked = !s.checked;
+          save(); render();
+        } else {
+          const target = document.getElementById(id);
+          if (target) target.scrollIntoView({ behavior: 'smooth' });
+        }
+      };
+      subsDomForToc.push(tocSub);
+
+      // 本文用の小項目作成
       const box = document.createElement("div");
       box.className = "sub-box";
       box.id = id;
-
       const header = document.createElement("div");
-header.className = "sub-header";
-
-const title = document.createElement("span");
-title.textContent = s.title;
-
-const del = document.createElement("button");
-del.textContent = "🗑";
-del.style.fontSize = "0.9em";
-del.onclick = e => {
-  e.stopPropagation(); // ← 開閉クリックを防ぐ
-  deleteSub(mi, si);
-};
-
-header.append(title, del);
-
-header.onclick = e => {
-  if (e.altKey) {
-    const t = prompt("小項目名を変更", s.title);
-    if (!t) return;
-    s.title = t;
-    save(); render();
-  } else {
-    s.open = !s.open;
-    save(); render();
-  }
-};
-
-      
-
+      header.className = "sub-header";
+      const title = document.createElement("span");
+      title.textContent = s.title;
+      const del = document.createElement("button");
+      del.textContent = "🗑";
+      del.onclick = e => { e.stopPropagation(); deleteSub(mi, si); };
+      header.append(title, del);
+      header.onclick = e => {
+        if (e.altKey) {
+          const t = prompt("小項目名を変更", s.title);
+          if (t) { s.title = t; save(); render(); }
+        } else {
+          s.open = !s.open; save(); render();
+        }
+      };
       const editor = document.createElement("div");
       editor.className = "editor";
       editor.contentEditable = true;
       editor.innerHTML = s.html;
-      editor.oninput = () => {
-        s.html = editor.innerHTML;
-        save();
-      };
-      editor.onfocus = () => {
-  activeEditor = editor;
-};
-
+      editor.oninput = () => { s.html = editor.innerHTML; save(); };
+      editor.onfocus = () => { activeEditor = editor; };
       if (!s.open) editor.style.display = "none";
-
       box.append(header, editor);
       subsDom.push(box);
     });
+
 
         // 目次と本文のタイトル表示（検索条件に合う場合のみ）
     if (hitMain || !kw) {
@@ -494,51 +490,7 @@ header.onclick = e => {
       toc.appendChild(tmToc);
 
       // --- 左側の目次（小項目）を追加 ---
-      m.subs.forEach((s, si) => {
-        if (kw && !(s.title + s.html).toLowerCase().includes(kw)) return;
-        const id = `sub-${mi}-${si}`;
-        const tocSub = document.createElement("div");
-        tocSub.className = "toc-sub";
-        tocSub.draggable = true;
-        tocSub.style.cursor = "grab";
-
-        // 小項目のドラッグイベント設定
-        tocSub.ondragstart = (e) => {
-          e.dataTransfer.setData("text/plain", JSON.stringify({ type: 'sub', mi, si }));
-          tocSub.classList.add("dragging");
-          e.stopPropagation(); // 大項目のドラッグ発火を防ぐ
-        };
-        tocSub.ondragend = () => tocSub.classList.remove("dragging");
-
-
-        // チェックボックスを大きくして押しやすく
-        const checkSpan = document.createElement("span");
-        checkSpan.textContent = s.checked ? "☑" : "☐";
-        checkSpan.style.color = s.checked ? "#4caf50" : "#999";
-        checkSpan.style.fontSize = "1.5em"; // サイズを大きく
-        checkSpan.style.marginRight = "10px";
-        checkSpan.style.padding = "4px 8px"; // クリック範囲を広げる
-        checkSpan.style.display = "inline-block";
-
-        const titleSpan = document.createElement("span");
-        titleSpan.textContent = s.title;
-        titleSpan.style.color = s.checked ? "#888" : "inherit";
-
-        tocSub.append(checkSpan, titleSpan);
-        
-                // 小項目の動作：チェックボックス、またはクリックでスクロール
-        tocSub.onclick = (e) => {
-          if (e.target === checkSpan) {
-            s.checked = !s.checked;
-            save(); render();
-          } else {
-            const target = document.getElementById(id);
-            if (target) target.scrollIntoView({ behavior: 'smooth' });
-          }
-        };
-
-        toc.appendChild(tocSub);
-      });
+      subsDomForToc.forEach(el => toc.appendChild(el));
 
 
 
