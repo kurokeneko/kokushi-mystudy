@@ -122,19 +122,20 @@ button:hover {
   opacity: 0.3;
 }
 
-/* ドロップ先の隙間を示すライン */
-.drag-over-top {
-  border-top: 3px solid var(--primary-color) !important;
-}
-.drag-over-bottom {
-  border-bottom: 3px solid var(--primary-color) !important;
-}
-
 
 
 .toc-sub:hover {
   background: #f9f9f9;
 }
+
+/* ドロップ先の隙間を示すライン（集中を妨げない緑色） */
+.drag-over-top {
+  border-top: 3px solid var(--accent-color) !important;
+}
+.drag-over-bottom {
+  border-bottom: 3px solid var(--accent-color) !important;
+}
+
 
 /* ===== メインコンテンツ ===== */
 #content {
