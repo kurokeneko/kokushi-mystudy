@@ -383,19 +383,42 @@ header.onclick = e => {
         const id = `sub-${mi}-${si}`;
         const tocSub = document.createElement("div");
         tocSub.className = "toc-sub";
-        // チェック状態を反映
-        tocSub.innerHTML = `<span>${s.checked ? "☑" : "☐"}</span>${s.title}`;
+                // チェックボックスとテキストを作成
+        const checkSpan = document.createElement("span");
+        checkSpan.textContent = s.checked ? "☑" : "☐";
+        checkSpan.style.color = s.checked ? "#4caf50" : "#999"; // チェック済みは緑、未チェックはグレー
+        checkSpan.style.fontWeight = "bold";
+
+        const titleSpan = document.createElement("span");
+        titleSpan.textContent = s.title;
+        if (s.checked) {
+          titleSpan.style.color = "#888"; // チェック済みは文字を薄く
+          titleSpan.style.textDecoration = "line-through"; // 取り消し線（お好みで）
+        }
+
+        tocSub.append(checkSpan, titleSpan);
         
-        // 目次クリックでその場所へスクロール、Alt+クリックで名前変更
+        // クリック時の動作
         tocSub.onclick = e => {
+          // 1. チェックボックス(checkSpan)自体をクリックした場合の切り替え
+          if (e.target === checkSpan) {
+            s.checked = !s.checked;
+            save(); render();
+            return;
+          }
+
+          // 2. Alt+クリックで名前変更
           if (e.altKey) {
             const t = prompt("小項目名を変更", s.title);
             if (t) { s.title = t; save(); render(); }
-          } else {
-            const target = document.getElementById(id);
-            if (target) target.scrollIntoView({ behavior: 'smooth' });
+            return;
           }
+
+          // 3. それ以外（テキストなど）をクリックでスクロール
+          const target = document.getElementById(id);
+          if (target) target.scrollIntoView({ behavior: 'smooth' });
         };
+
         toc.appendChild(tocSub);
       });
 
