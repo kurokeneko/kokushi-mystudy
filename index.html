@@ -367,14 +367,27 @@ header.onclick = e => {
 
         // 目次と本文のタイトル表示（検索条件に合う場合のみ）
     if (hitMain || !kw) {
+            // --- 長押し判定用の共通関数 ---
+      const addLongPress = (el, onLongPress, onClick) => {
+        let timer;
+        let isLong = false;
+        el.onmousedown = el.ontouchstart = () => {
+          isLong = false;
+          timer = setTimeout(() => { isLong = true; onLongPress(); }, 500); // 0.5秒で長押し判定
+        };
+        el.onmouseup = el.onmouseleave = el.ontouchend = () => clearTimeout(timer);
+        el.onclick = (e) => { if (!isLong && onClick) onClick(e); };
+      };
+
       // --- 左側の目次（大項目）を追加 ---
       const tmToc = document.createElement("div");
       tmToc.className = "toc-main";
       tmToc.textContent = m.title;
-      tmToc.onclick = () => {
-        const t = prompt("大項目名を変更", m.title);
-        if (t) { m.title = t; save(); render(); }
-      };
+      // 大項目の長押しで名前変更
+      addLongPress(tmToc, 
+        () => { const t = prompt("大項目名を変更", m.title); if (t) { m.title = t; save(); render(); } },
+        null
+      );
       toc.appendChild(tmToc);
 
       // --- 左側の目次（小項目）を追加 ---
@@ -383,44 +396,36 @@ header.onclick = e => {
         const id = `sub-${mi}-${si}`;
         const tocSub = document.createElement("div");
         tocSub.className = "toc-sub";
-                // チェックボックスとテキストを作成
+
         const checkSpan = document.createElement("span");
         checkSpan.textContent = s.checked ? "☑" : "☐";
-        checkSpan.style.color = s.checked ? "#4caf50" : "#999"; // チェック済みは緑、未チェックはグレー
+        checkSpan.style.color = s.checked ? "#4caf50" : "#999";
         checkSpan.style.fontWeight = "bold";
 
         const titleSpan = document.createElement("span");
         titleSpan.textContent = s.title;
-        if (s.checked) {
-          titleSpan.style.color = "#888"; // チェック済みは文字を薄く
-          titleSpan.style.textDecoration = "line-through"; // 取り消し線（お好みで）
-        }
+        titleSpan.style.color = s.checked ? "#888" : "inherit"; // 打ち消し線は削除、色のみ変更
 
         tocSub.append(checkSpan, titleSpan);
         
-        // クリック時の動作
-        tocSub.onclick = e => {
-          // 1. チェックボックス(checkSpan)自体をクリックした場合の切り替え
-          if (e.target === checkSpan) {
-            s.checked = !s.checked;
-            save(); render();
-            return;
+        // 小項目の動作設定
+        addLongPress(tocSub,
+          // 長押し時：名前変更
+          () => { const t = prompt("小項目名を変更", s.title); if (t) { s.title = t; save(); render(); } },
+          // 通常クリック時
+          (e) => {
+            if (e.target === checkSpan) {
+              s.checked = !s.checked;
+              save(); render();
+            } else {
+              const target = document.getElementById(id);
+              if (target) target.scrollIntoView({ behavior: 'smooth' });
+            }
           }
-
-          // 2. Alt+クリックで名前変更
-          if (e.altKey) {
-            const t = prompt("小項目名を変更", s.title);
-            if (t) { s.title = t; save(); render(); }
-            return;
-          }
-
-          // 3. それ以外（テキストなど）をクリックでスクロール
-          const target = document.getElementById(id);
-          if (target) target.scrollIntoView({ behavior: 'smooth' });
-        };
-
+        );
         toc.appendChild(tocSub);
       });
+
 
       // --- 右側の本文エリアの描画開始 ---
 
