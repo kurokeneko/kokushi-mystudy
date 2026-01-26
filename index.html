@@ -6,185 +6,208 @@
 <title>国試マイスタディ!</title>
 
 <style>
-
-.toolbar-global {
-  position: sticky;
-  top: 0;
-  background: #fff;
-  border-bottom: 1px solid #ccc;
-  padding: 8px;
-  z-index: 1000;
+/* ===== 全体設定 ===== */
+:root {
+  --primary-color: #4a90e2;    /* 落ち着いた青 */
+  --accent-color: #4caf50;     /* 完了・成功の緑 */
+  --bg-color: #f8f9fa;         /* 背景の薄いグレー */
+  --sidebar-bg: #ffffff;       /* サイドバーの白 */
+  --border-color: #e0e0e0;     /* 境界線 */
+  --text-main: #333333;        /* メイン文字色 */
+  --text-sub: #666666;         /* 補助文字色 */
 }
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
   display: flex;
   height: 100vh;
-  overflow: hidden; /* ← bodyは絶対にスクロールさせない */
+  overflow: hidden;
+  background-color: var(--bg-color);
+  color: var(--text-main);
 }
 
-/* ===== 目次 ===== */
-#toc {
-  width: 280px;
-  border-right: 1px solid #ccc;
-  padding: 10px;
-  background: #f7f7f7;
-  overflow-y: auto;   /* 左は左でスクロール */
-}
-
-#content {
-  flex: 1;
+/* ===== ツールバー（共通） ===== */
+.toolbar-global {
+  position: sticky;
+  top: 0;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
+  border-bottom: 1px solid var(--border-color);
+  padding: 12px 20px;
+  z-index: 1000;
   display: flex;
-  flex-direction: column;
-  overflow: hidden; /* ← 中で分業 */
+  gap: 8px;
 }
 
-#toc h2 { margin-top: 0; }
-
-.toc-main, .toc-sub {
-  transition: transform 0.1s, background-color 0.1s; /* 滑らかに動かす */
-  user-select: none; /* テキスト選択を防いで操作しやすく */
+button {
+  cursor: pointer;
+  border: 1px solid var(--border-color);
+  background: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.2s;
+  color: var(--text-main);
 }
 
-/* 押した瞬間の演出 */
-.toc-main:active, .toc-sub:active {
-  transform: scale(0.97); /* 少しだけ小さく（沈む感じ） */
-  background-color: #eee; /* 背景を少し暗く */
+button:hover {
+  background: #f0f7ff;
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+/* ===== サイドバー（目次） ===== */
+#toc {
+  width: 300px;
+  border-right: 1px solid var(--border-color);
+  padding: 20px;
+  background: var(--sidebar-bg);
+  overflow-y: auto;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.02);
+}
+
+#toc h2 {
+  font-size: 1.2rem;
+  margin-bottom: 15px;
+  color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#searchBox, #filterStatus {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+#searchBox:focus {
+  outline: 2px solid var(--primary-color);
+  border-color: transparent;
 }
 
 .toc-main {
   font-weight: bold;
-  margin-top: 14px;
-  padding: 4px;
-  border-radius: 4px;
+  margin-top: 20px;
+  padding: 8px;
+  background: #f0f4f8;
+  border-left: 4px solid var(--primary-color);
+  border-radius: 0 4px 4px 0;
 }
 
 .toc-sub {
-  margin-left: 14px;
+  margin-left: 10px;
+  margin-top: 4px;
   cursor: pointer;
   display: flex;
   align-items: center;
-  padding: 4px;
-  border-radius: 4px;
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 0.95rem;
 }
 
-
-.toc-sub span {
-  margin-right: 6px;
-  font-size: 1.3em;
+.toc-sub:hover {
+  background: #f9f9f9;
 }
 
-
-
-/* ===== 本文 ===== */
-
-
+/* ===== メインコンテンツ ===== */
+#content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: white;
+}
 
 #main {
   flex: 1;
-  padding: 16px;
-  overflow-y: auto;  /* ← 右側スクロールはここだけ */
+  padding: 30px 40px;
+  overflow-y: auto;
 }
 
 .main-title {
-  font-size: 1.5em;
-  margin-top: 28px;
+  font-size: 1.8rem;
+  font-weight: 800;
+  margin-top: 40px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid var(--text-main);
+  padding-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
+/* 小項目ボックス（カード風） */
 .sub-box {
-  border: 1px solid #ddd;
-  padding: 10px;
-  margin-top: 12px;
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 0;
+  margin-top: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  overflow: hidden;
 }
 
 .sub-header {
+  background: #fafafa;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
-  cursor: pointer;
-  font-weight: bold;
+  align-items: center;
 }
 
 .editor {
-  margin-top: 10px;
-  border: 1px solid #ccc;
-  padding: 8px;
-  min-height: 120px;
-  line-height: 1.6;
-  max-height: none;
-  overflow: visible;
-  overscroll-behavior: contain;
+  padding: 20px;
+  min-height: 150px;
+  line-height: 1.8; /* 読みやすさのために広めに */
+  font-size: 16px;
+  color: #444;
 }
 
-.editor:focus {
-  outline: 2px solid #4caf50;
-}
-
-.toolbar button {
-  font-size: 0.85em;
-  margin-right: 6px;
-}
-
+/* ===== 表のスタイル（ノート風） ===== */
 table {
   border-collapse: collapse;
-  margin: 8px 0;
-}
-td, th {
-  border: 1px solid #666;
-  padding: 6px;
-  min-width: 60px;
-}
-
-#searchBox {
   width: 100%;
-  padding: 6px;
-  margin-bottom: 6px;
+  margin: 15px 0;
+  background: white;
 }
 
-/* ===== 表編集 ===== */
+th, td {
+  border: 1px solid #d1d1d1;
+  padding: 10px;
+  font-size: 15px;
+}
+
+th {
+  background: #f2f2f2;
+}
+
+/* ===== 表編集ツールバー ===== */
 .table-toolbar {
   position: fixed;
   background: #333;
   color: #fff;
-  padding: 6px;
-  border-radius: 6px;
-  font-size: 12px;
-  display: none;
-  z-index: 9999;
+  padding: 8px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
 .table-toolbar button {
-  margin: 2px;
-  font-size: 12px;
+  background: transparent;
+  color: white;
+  border: 1px solid #555;
 }
 
-/* 列幅ドラッグ */
-table {
-  table-layout: fixed;
+.table-toolbar button:hover {
+  background: #555;
 }
 
-td, th {
-  resize: horizontal;
-  overflow: auto;
-}
-
-html, body {
-  height: 100%;
-  overflow-y: auto;
-}
-
-.sub-header button,
-.main-title button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  opacity: 0.6;
-}
-
-.sub-header button:hover,
-.main-title button:hover {
-  opacity: 1;
-}
 
 </style>
 </head>
