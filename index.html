@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>国試!study</title>
+<title>国試study</title>
 
 <style>
 /* ===== 全体設定 ===== */
@@ -349,10 +349,13 @@ th {
   // 挿入場所を特定するために直前の要素のあとに配置します
   document.addEventListener("DOMContentLoaded", () => {
     const editorToolbar = document.getElementById("editorToolbar");
-    const tableToolbar = document.createElement("div");
-    tableToolbar.id = "tableToolbar";
-    tableToolbar.className = "table-toolbar";
-    tableToolbar.style.display = "none";
+    let tableToolbar = document.getElementById("tableToolbar");
+    if (!tableToolbar) {
+      tableToolbar = document.createElement("div");
+      tableToolbar.id = "tableToolbar";
+      tableToolbar.className = "table-toolbar";
+      tableToolbar.style.display = "none";
+    }
     tableToolbar.innerHTML = `
       <button onclick="moveRow(-1)">⬆ 行</button>
       <button onclick="moveRow(1)">⬇ 行</button>
@@ -454,10 +457,8 @@ function deleteMain(mi) {
 function deleteSub(mi, si) {
   if (!confirm(`「${data[mi].subs[si].title}」を削除しますか？`)) return;
   data[mi].subs.splice(si, 1);
-  save(); render();
+  save();
 }
-
-  if (isPickingColor) return; // 色選択中は再描画しない
 
 /* =====================
    描画
