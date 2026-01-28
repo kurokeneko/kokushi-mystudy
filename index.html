@@ -620,15 +620,22 @@ main.append(mt);
 /* =====================
    エディタ操作
 ===================== */
- function cmd(c, v = null) {
+function cmd(c, v = null) {
   if (!activeEditor) return;
-  // 変更前に現在の状態を履歴に保存
-  pushUndo();
+  // 履歴保存関数が存在する場合のみ実行
+  if (typeof pushUndo === 'function') pushUndo();
+  
   activeEditor.focus();
   document.execCommand(c, false, v);
-  // 変更後の状態を即時保存
-  saveRaw();
+  
+  // 保存処理
+  if (typeof saveRaw === 'function') {
+    saveRaw();
+  } else {
+    save();
+  }
 }
+
 
 
 
@@ -830,23 +837,24 @@ function delRow() {
   save();
 }
 
+
 function setCellColor(color) {
   if (!activeCell) return;
-  // 変更前に履歴を保存
-  pushUndo();
-  
+  if (typeof pushUndo === 'function') pushUndo();
+
   activeCell.style.backgroundColor = color;
   
   const editor = activeCell.closest('.editor');
   if (editor) {
     const box = editor.closest('.sub-box');
-    const mi = box.id.split('-')[1];
-    const si = box.id.split('-')[2];
-    data[mi].subs[si].html = editor.innerHTML;
-    saveRaw(); // 履歴反映も含めて保存
+    if (box) {
+      const mi = box.id.split('-')[1];
+      const si = box.id.split('-')[2];
+      data[mi].subs[si].html = editor.innerHTML;
+      if (typeof saveRaw === 'function') saveRaw(); else save();
+    }
   }
 }
-
 
 
 /* =====================
