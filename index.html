@@ -278,10 +278,11 @@ th {
   <button onclick="cmd('underline')">下線</button>
   <button onclick="insertTable()">表</button>
   <span style="color:#ccc; margin: 0 4px;">|</span>
-  <button onclick="cmd('foreColor', '#ff0000')" style="color:#ff0000; font-weight:bold;">赤</button>
-  <button onclick="cmd('foreColor', '#0000ff')" style="color:#0000ff; font-weight:bold;">青</button>
-  <button onclick="cmd('foreColor', '#00aa00')" style="color:#00aa00; font-weight:bold;">緑</button>
-  <button onclick="cmd('foreColor', '#ff8800')" style="color:#ff8800; font-weight:bold;">橙</button>
+  <button onclick="cmd('foreColor', '#000000')" style="color:#000000; font-weight:bold;">⚫️</button>
+  <button onclick="cmd('foreColor', '#ff0000')" style="color:#ff0000; font-weight:bold;">🔴</button>
+  <button onclick="cmd('foreColor', '#0000ff')" style="color:#0000ff; font-weight:bold;">🔵</button>
+  <button onclick="cmd('foreColor', '#00aa00')" style="color:#00aa00; font-weight:bold;">🟢</button>
+  <button onclick="cmd('foreColor', '#ff8800')" style="color:#ff8800; font-weight:bold;">🟠</button>
   <input type="color" oninput="cmd('foreColor', this.value)" title="カスタム色" style="width:30px; height:24px; padding:0; border:none; cursor:pointer; vertical-align:middle; background:none;">
 </div>
 
@@ -621,9 +622,14 @@ main.append(mt);
 ===================== */
  function cmd(c, v = null) {
   if (!activeEditor) return;
+  // 変更前に現在の状態を履歴に保存
+  pushUndo();
   activeEditor.focus();
   document.execCommand(c, false, v);
+  // 変更後の状態を即時保存
+  saveRaw();
 }
+
 
 
 function insertTable() {
@@ -826,18 +832,21 @@ function delRow() {
 
 function setCellColor(color) {
   if (!activeCell) return;
+  // 変更前に履歴を保存
+  pushUndo();
+  
   activeCell.style.backgroundColor = color;
   
-  // HTMLをデータ構造に反映して保存
   const editor = activeCell.closest('.editor');
   if (editor) {
     const box = editor.closest('.sub-box');
     const mi = box.id.split('-')[1];
     const si = box.id.split('-')[2];
     data[mi].subs[si].html = editor.innerHTML;
-    localStorage.setItem(KEY, JSON.stringify(data));
+    saveRaw(); // 履歴反映も含めて保存
   }
 }
+
 
 
 /* =====================
