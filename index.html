@@ -383,6 +383,8 @@ th {
 
 
 <script>
+let activeEditor = null;
+let isPickingColor = false; // カラーピッカー操作中フラグ
 /* =====================
    サイドバー開閉
 ===================== */
@@ -486,19 +488,6 @@ function render() {
       hitMain = true;
       const id = `sub-${mi}-${si}`;
 
-      const tocSub = document.createElement("div");
-      tocSub.className = "toc-sub";
-      tocSub.innerHTML = `<span>${s.checked ? "☑" : "☐"}</span>${s.title}`;
-      tocSub.onclick = e => {
-  if (e.altKey) {
-    const t = prompt("小項目名を変更", s.title);
-    if (!t) return;
-    s.title = t;
-    save(); render();
-  } else {
-    document.getElementById(id).scrollIntoView();
-  }
-};
       
 
       const box = document.createElement("div");
@@ -872,9 +861,8 @@ jsonInput.onchange = e => {
 ===================== */
 let activeTable = null;
 let activeCell = null;
-let isPickingColor = false; // カラーピッカー操作中フラグ
-let activeEditor = null;
-let isPickingColor = false; // カラーピッカー操作中フラグ
+
+
 
 
 document.addEventListener("click", e => {
@@ -922,8 +910,6 @@ function delRow() {
 
 function setCellColor(color) {
   if (!activeCell) return;
-  if (typeof pushUndo === 'function') pushUndo();
-
   activeCell.style.backgroundColor = color;
   
   const editor = activeCell.closest('.editor');
@@ -933,12 +919,13 @@ function setCellColor(color) {
       const mi = box.id.split('-')[1];
       const si = box.id.split('-')[2];
       data[mi].subs[si].html = editor.innerHTML;
-            // セルの色変更時も、render()を伴わない直接保存にすることで選択状態を維持する
+      // 履歴に保存
       localStorage.setItem(KEY, JSON.stringify(data));
-
+      snapshot(); 
     }
   }
 }
+
 
 
 /* =====================
