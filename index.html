@@ -382,9 +382,6 @@ th {
 </div>
 
 
-  let activeEditor = null;
-  let isPickingColor = false;
-
 <script>
 /* =====================
    サイドバー開閉
@@ -875,6 +872,8 @@ jsonInput.onchange = e => {
 ===================== */
 let activeTable = null;
 let activeCell = null;
+let isPickingColor = false; // カラーピッカー操作中フラグ
+let activeEditor = null;
 let isPickingColor = false; // カラーピッカー操作中フラグ
 
 
