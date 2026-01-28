@@ -452,10 +452,12 @@ header.onclick = e => {
       editor.className = "editor";
       editor.contentEditable = true;
       editor.innerHTML = s.html;
-      editor.oninput = () => {
+            editor.oninput = () => {
         s.html = editor.innerHTML;
-        save();
+        // activeTableなどが更新された直後に保存を走らせるためsaveRawを使用
+        saveRaw(); 
       };
+
       editor.onfocus = () => {
   activeEditor = editor;
 };
@@ -807,41 +809,52 @@ function delCol() {
 ===================== */
 function moveRow(dir) {
   if (!activeCell || !activeTable) return;
-
   const row = activeCell.parentElement;
-  const rows = Array.from(activeTable.rows);
-  const index = rows.indexOf(row);
-
-  // 上限・下限チェック
+  const index = row.rowIndex;
   if (dir === -1 && index === 0) return;
-  if (dir === 1 && index === rows.length - 1) return;
+  if (dir === 1 && index === activeTable.rows.length - 1) return;
 
   const targetIndex = index + dir;
-  const reference =
-    dir === -1
-      ? rows[targetIndex]                  // 上へ → 対象行の前
-      : rows[targetIndex].nextSibling;     // 下へ → 対象行の「次」
-
-  activeTable.insertBefore(row, reference);
-  save();
+  if (dir === -1) {
+    activeTable.tBodies[0].insertBefore(row, activeTable.rows[targetIndex]);
+  } else {
+    activeTable.tBodies[0].insertBefore(row, activeTable.rows[targetIndex].nextSibling);
+  }
+  
+  // HTMLをデータ構造に反映して保存
+  const editor = activeTable.closest('.editor');
+  if (editor) {
+    const mi = editor.closest('.sub-box').id.split('-')[1];
+    const si = editor.closest('.sub-box').id.split('-')[2];
+    data[mi].subs[si].html = editor.innerHTML;
+    save();
+  }
 }
 
 function moveCol(dir) {
-  if (!activeCell) return;
-  const row = activeCell.parentElement;
-  const c = Array.from(row.cells).indexOf(activeCell);
-  const t = c + dir;
-  if (t < 0 || t >= row.cells.length) return;
+  if (!activeCell || !activeTable) return;
+  const colIndex = activeCell.cellIndex;
+  const targetIndex = colIndex + dir;
+  if (targetIndex < 0 || targetIndex >= activeTable.rows[0].cells.length) return;
 
-  for (const r of activeTable.rows) {
-    const cell = r.cells[c];
-    const ref = r.cells[t];
-    dir === -1
-      ? r.insertBefore(cell, ref)
-      : r.insertBefore(ref, cell);
+  for (const row of activeTable.rows) {
+    const cellToMove = row.cells[colIndex];
+    if (dir === -1) {
+      row.insertBefore(cellToMove, row.cells[targetIndex]);
+    } else {
+      row.insertBefore(cellToMove, row.cells[targetIndex].nextSibling);
+    }
   }
-  save();
+
+  const editor = activeTable.closest('.editor');
+  if (editor) {
+    const mi = editor.closest('.sub-box').id.split('-')[1];
+    const si = editor.closest('.sub-box').id.split('-')[2];
+    data[mi].subs[si].html = editor.innerHTML;
+    save();
+  }
 }
+
 
 /* =====================
    undo / redo（⑦-⑤除外）
