@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>国試study</title>
+<title>国試!study</title>
 
 <style>
 /* ===== 全体設定 ===== */
@@ -282,17 +282,21 @@ th {
   <button onclick="importJSON()">📥 読込</button>
   <input type="file" id="jsonInput" accept=".json" hidden>
   <br>
+  <br>
   <input id="searchBox" placeholder="🔍 検索" oninput="render()">
 
 
-    <select id="filterStatus" onchange="render()" style="width: 100%; padding: 6px; margin-bottom: 6px;">
+    
+
+
+  <h2>目次</h2>
+  <div style="text-align: right;">
+  <select id="filterStatus" onchange="render()" style="width: 100%; padding: 6px; margin-bottom: 6px;">
     <option value="all">すべて</option>
     <option value="done">完了のみ</option>
     <option value="todo">未完了のみ</option>
   </select>
-
-
-  <h2>目次</h2>
+  </div>
   <hr>
   <button onclick="addMain()">＋ 大項目</button>
   <div id="tocList"></div>
