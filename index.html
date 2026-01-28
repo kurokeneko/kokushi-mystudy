@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>国試すたでぃーー</title>
+<title>国試すたでぃ</title>
 
 <style>
 /* ===== 全体設定 ===== */
@@ -453,11 +453,12 @@ header.onclick = e => {
       editor.className = "editor";
       editor.contentEditable = true;
       editor.innerHTML = s.html;
-            editor.oninput = () => {
+      editor.oninput = () => {
         s.html = editor.innerHTML;
-        // activeTableなどが更新された直後に保存を走らせるためsaveRawを使用
-        saveRaw(); 
+        // 入力中は再描画(render)を伴わないsave関数、またはlocalStorageへの直接保存のみを行う
+        localStorage.setItem(KEY, JSON.stringify(data));
       };
+
 
       editor.onfocus = () => {
   activeEditor = editor;
