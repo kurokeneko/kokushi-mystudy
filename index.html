@@ -250,6 +250,21 @@ th {
 
 
 <div id="toc">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@700&display=swap" rel="stylesheet">
+
+<h1 style="
+  font-family: 'Noto Serif JP', serif; 
+  font-size: 24px; 
+  color: #2c3e50; 
+  text-align: center; 
+  padding: 15px 0; 
+  border-top: 2px solid #2c3e50; 
+  border-bottom: 2px solid #2c3e50; 
+  letter-spacing: 0.1em; 
+  margin: 20px 0;
+">
+  第115回看護師国家試験対策ノート
+</h1>
 
   <button onclick="exportJSON()">📤 JSON</button>
   <button onclick="importJSON()">📥 読込</button>
@@ -283,7 +298,8 @@ th {
   <button onclick="cmd('foreColor', '#0000ff')" style="color:#0000ff; font-weight:bold;">🔵</button>
   <button onclick="cmd('foreColor', '#00aa00')" style="color:#00aa00; font-weight:bold;">🟢</button>
   <button onclick="cmd('foreColor', '#ff8800')" style="color:#ff8800; font-weight:bold;">🟠</button>
-  <input type="color" oninput="cmd('foreColor', this.value)" title="カスタム色" style="width:30px; height:24px; padding:0; border:none; cursor:pointer; vertical-align:middle; background:none;">
+  <input type="color" oninput="pickColor(this.value)" onchange="activeEditor.focus()" title="カスタム色" style="width:30px; height:24px; padding:0; border:none; cursor:pointer; vertical-align:middle; background:none;">
+
 </div>
 
 <script>
@@ -633,6 +649,16 @@ function cmd(c, v = null) {
   // 色変更などのコマンド実行時は、render()を伴わない保存のみを行うことで選択範囲を維持する
   localStorage.setItem(KEY, JSON.stringify(data));
 
+}
+
+
+function pickColor(v) {
+  if (!activeEditor) return;
+  if (typeof pushUndo === 'function') pushUndo();
+  
+  // フォーカスを移さずにコマンドだけ実行することで、パレットを閉じさせない
+  document.execCommand('foreColor', false, v);
+  localStorage.setItem(KEY, JSON.stringify(data));
 }
 
 
