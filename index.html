@@ -304,14 +304,18 @@ th {
     
 
 
-  <h2>目次</h2>
-  <div style="text-align: right;">
-  <select id="filterStatus" onchange="render()" style="width: 50%; padding: 6px; margin-bottom: 6px;">
-    <option value="all">すべて</option>
-    <option value="done">完了のみ</option>
-    <option value="todo">未完了のみ</option>
-  </select>
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+    <h2 style="margin: 0; font-size: 1.2rem; color: var(--primary-color);">目次</h2>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <span style="font-size: 12px; color: var(--text-sub); font-weight: bold;">フィルタ</span>
+      <select id="filterStatus" onchange="render()" style="padding: 4px 8px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 13px; background-color: #fff; cursor: pointer;">
+        <option value="all">すべて</option>
+        <option value="done">完了のみ</option>
+        <option value="todo">未完了のみ</option>
+      </select>
+    </div>
   </div>
+
   <hr>
   <button onclick="addMain()">＋ 大項目</button>
   <div id="tocList"></div>
