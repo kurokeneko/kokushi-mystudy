@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>国試すたでぃ</title>
+<title>国試study</title>
 
 <style>
 /* ===== 全体設定 ===== */
@@ -629,11 +629,10 @@ function cmd(c, v = null) {
   document.execCommand(c, false, v);
   
   // 保存処理
-  if (typeof saveRaw === 'function') {
-    saveRaw();
-  } else {
-    save();
-  }
+
+  // 色変更などのコマンド実行時は、render()を伴わない保存のみを行うことで選択範囲を維持する
+  localStorage.setItem(KEY, JSON.stringify(data));
+
 }
 
 
@@ -851,7 +850,9 @@ function setCellColor(color) {
       const mi = box.id.split('-')[1];
       const si = box.id.split('-')[2];
       data[mi].subs[si].html = editor.innerHTML;
-      if (typeof saveRaw === 'function') saveRaw(); else save();
+            // セルの色変更時も、render()を伴わない直接保存にすることで選択状態を維持する
+      localStorage.setItem(KEY, JSON.stringify(data));
+
     }
   }
 }
