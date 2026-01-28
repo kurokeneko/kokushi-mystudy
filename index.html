@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>kokushi-mystudy</title>
+<title>#kokushi-mystudy</title>
 
 <style>
 /* ===== 全体設定 ===== */
@@ -647,31 +647,33 @@ header.append(title, del);
       // --- 右側の本文エリアの描画開始 ---
 
 
+    // --- 右側の本文エリアの描画 ---
+    // 検索・フィルタの結果、表示すべき小項目(subsDom)がある場合、または検索中でない場合のみ表示
+    if (subsDom.length > 0 || (!kw && filter === "all")) {
       const mt = document.createElement("div");
-mt.className = "main-title";
+      mt.className = "main-title";
 
-const title = document.createElement("span");
-title.textContent = m.title;
+      const title = document.createElement("span");
+      title.textContent = m.title;
 
-const del = document.createElement("button");
-del.textContent = "🗑";
-del.style.marginLeft = "8px";
-del.onclick = (e) => {
-  e.stopPropagation(); // これにより親要素(mt)のクリックイベント（名前変更）が発生するのを防ぎます
-  deleteMain(mi);
-};
+      const del = document.createElement("button");
+      del.textContent = "🗑";
+      del.style.marginLeft = "8px";
+      del.onclick = (e) => {
+        e.stopPropagation();
+        deleteMain(mi);
+      };
 
-mt.append(title, del);
+      mt.append(title, del);
 
+      mt.onclick = () => {
+        const t = prompt("大項目名を変更", m.title);
+        if (!t) return;
+        m.title = t;
+        save(); render();
+      };
 
-mt.onclick = () => {
-  const t = prompt("大項目名を変更", m.title);
-  if (!t) return;
-  m.title = t;
-  save(); render();
-};
-
-main.append(mt);
+      main.append(mt);
 
       const btn = document.createElement("button");
       btn.textContent = "＋ 小項目";
@@ -679,6 +681,8 @@ main.append(mt);
       main.append(btn);
 
       subsDom.forEach(d => main.append(d));
+    }
+
     }
   });
 }
