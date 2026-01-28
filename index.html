@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>国試すたでぃ。</title>
+<title>国試すたでぃーー</title>
 
 <style>
 /* ===== 全体設定 ===== */
@@ -250,9 +250,10 @@ th {
 
 
 <div id="toc">
-  <button onclick="undo()">↩</button>
-<button onclick="redo()">↪</button>
-  <h2>目次</h2>
+
+  <button onclick="exportJSON()">📤 JSON</button>
+  <button onclick="importJSON()">📥 読込</button>
+  <input type="file" id="jsonInput" accept=".json" hidden>
   <input id="searchBox" placeholder="🔍 検索" oninput="render()">
 
 
@@ -262,10 +263,8 @@ th {
     <option value="todo">未完了のみ</option>
   </select>
 
-  <button onclick="exportJSON()">📤 JSON</button>
-  <button onclick="importJSON()">📥 読込</button>
-  <input type="file" id="jsonInput" accept=".json" hidden>
 
+  <h2>目次</h2>
   <hr>
   <button onclick="addMain()">＋ 大項目</button>
   <div id="tocList"></div>
@@ -273,6 +272,8 @@ th {
 
 <div id="content">
 <div id="editorToolbar" class="toolbar-global">
+  <button onclick="undo()">↩</button>
+  <button onclick="redo()">↪</button>
   <button onclick="cmd('bold')">太字</button>
   <button onclick="cmd('underline')">下線</button>
   <button onclick="insertTable()">表</button>
