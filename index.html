@@ -435,18 +435,18 @@ del.onclick = e => {
 
 header.append(title, del);
 
-      // 最小化（開閉）ボタンの作成
+      // 最小化（開閉）ボタンを左端に作成
       const toggleBtn = document.createElement("button");
-      toggleBtn.textContent = s.open ? "−" : "＋"; // マイナスマーク風
-      toggleBtn.style.marginLeft = "8px";
+      toggleBtn.textContent = s.open ? "−" : "＋";
+      toggleBtn.style.marginRight = "10px"; // 右側に余白を作ってタイトルと離す
       toggleBtn.onclick = e => {
-        e.stopPropagation();
+        e.stopPropagation(); // ヘッダーの「名前変更」を発火させない
         s.open = !s.open;
         save(); render();
       };
       
-      // ボタン類をヘッダーに追加（ゴミ箱ボタンの前に挿入）
-      header.insertBefore(toggleBtn, del);
+      // ヘッダーの先頭（左端）に挿入
+      header.prepend(toggleBtn);
 
       // ヘッダー全体をクリックした時は名前の変更
       header.onclick = () => {
