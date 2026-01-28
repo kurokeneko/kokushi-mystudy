@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>国試study</title>
+<title>kokushi-mystudy</title>
 
 <style>
 /* ===== 全体設定 ===== */
@@ -338,7 +338,9 @@ th {
           <input type="color" 
       onmousedown="isPickingColor = true" 
       oninput="pickColor(this.value)" 
-      onchange="isPickingColor = false; activeEditor.focus(); render();" 
+      onchange="setTimeout(() => { isPickingColor = false; }, 100);
+      activeEditor.focus(); render();" 
+
       title="カスタム色" 
       style="width:30px; height:24px; padding:0; border:none; cursor:pointer; vertical-align:middle; background:none;">
   </div>
@@ -698,12 +700,15 @@ function cmd(c, v = null) {
 
 function pickColor(v) {
   if (!activeEditor) return;
+  isPickingColor = true; // 操作中フラグを立てる
+  
   if (typeof pushUndo === 'function') pushUndo();
   
-  // フォーカスを移さずにコマンドだけ実行することで、パレットを閉じさせない
+  activeEditor.focus();
   document.execCommand('foreColor', false, v);
   localStorage.setItem(KEY, JSON.stringify(data));
 }
+
 
 
 
@@ -871,18 +876,19 @@ document.addEventListener("click", e => {
   if (!toolbar) return;
   const cell = e.target.closest("td, th");
 
+  if (isPickingColor) return; // カラーピッカー操作中はクリックイベントを無視
+
   if (cell) {
     activeCell = cell;
     activeTable = cell.closest("table");
-    // ポップアップではなく上部に固定表示
     toolbar.style.display = "flex";
   } else {
-    // ツールバー内のボタンクリック時は消さないように判定
     if (!e.target.closest("#tableToolbar")) {
       toolbar.style.display = "none";
       activeCell = activeTable = null;
     }
   }
+
 });
 
 /* =====================
