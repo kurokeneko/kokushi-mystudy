@@ -435,17 +435,27 @@ del.onclick = e => {
 
 header.append(title, del);
 
-header.onclick = e => {
-  if (e.altKey) {
-    const t = prompt("小項目名を変更", s.title);
-    if (!t) return;
-    s.title = t;
-    save(); render();
-  } else {
-    s.open = !s.open;
-    save(); render();
-  }
-};
+      // 最小化（開閉）ボタンの作成
+      const toggleBtn = document.createElement("button");
+      toggleBtn.textContent = s.open ? "−" : "＋"; // マイナスマーク風
+      toggleBtn.style.marginLeft = "8px";
+      toggleBtn.onclick = e => {
+        e.stopPropagation();
+        s.open = !s.open;
+        save(); render();
+      };
+      
+      // ボタン類をヘッダーに追加（ゴミ箱ボタンの前に挿入）
+      header.insertBefore(toggleBtn, del);
+
+      // ヘッダー全体をクリックした時は名前の変更
+      header.onclick = () => {
+        const t = prompt("小項目名を変更", s.title);
+        if (!t) return;
+        s.title = t;
+        save(); render();
+      };
+
 
       
 
