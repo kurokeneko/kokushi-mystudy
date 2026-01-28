@@ -65,6 +65,18 @@ button:hover {
   background: var(--sidebar-bg);
   overflow-y: auto;
   box-shadow: 2px 0 5px rgba(0,0,0,0.02);
+  transition: all 0.3s ease; /* アニメーションを追加 */
+  white-space: nowrap;      /* 閉じる時に文字が回り込まないようにする */
+}
+
+/* 非表示状態のスタイル */
+#toc.collapsed {
+  width: 0;
+  padding: 0;
+  margin: 0;
+  border: none;
+  opacity: 0;
+  pointer-events: none;
 }
 
 #toc h2 {
@@ -287,8 +299,10 @@ th {
 
 <div id="content">
 <div id="editorToolbar" class="toolbar-global">
+  <button onclick="toggleSidebar()" title="目次表示/非表示">☰</button>
   <button onclick="undo()">↩</button>
   <button onclick="redo()">↪</button>
+  <hr>
   <button onclick="cmd('bold')">太字</button>
   <button onclick="cmd('underline')">下線</button>
   <button onclick="insertTable()">表</button>
@@ -342,8 +356,17 @@ th {
 
 <script>
 /* =====================
+   サイドバー開閉
+===================== */
+function toggleSidebar() {
+  const toc = document.getElementById("toc");
+  toc.classList.toggle("collapsed");
+}
+
+/* =====================
    基本データ管理
 ===================== */
+
 const KEY = "kokushi-my-study";
 let data = JSON.parse(localStorage.getItem(KEY)) || [];
 
