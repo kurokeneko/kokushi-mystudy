@@ -319,12 +319,7 @@ th {
 
 <div id="content">
 <div class="toolbar-scroll-container">
-    <input type="color" 
-      onmousedown="isPickingColor = true" 
-      oninput="pickColor(this.value)" 
-      onchange="isPickingColor = false; activeEditor.focus(); render();" 
-      title="カスタム色" 
-      style="width:30px; height:24px; padding:0; border:none; cursor:pointer; vertical-align:middle; background:none;">
+
 
     <div id="editorToolbar" class="toolbar-global">
     <button onclick="toggleSidebar()" title="目次表示/非表示">☰</button>
@@ -339,9 +334,15 @@ th {
     <button onclick="cmd('foreColor', '#0000ff')" style="color:#0000ff; font-weight:bold;">🔵</button>
     <button onclick="cmd('foreColor', '#00aa00')" style="color:#00aa00; font-weight:bold;">🟢</button>
     <button onclick="cmd('foreColor', '#ff8800')" style="color:#ff8800; font-weight:bold;">🟠</button>
-    <input type="color" 
+
+          <input type="color" 
+      onmousedown="isPickingColor = true" 
+      oninput="pickColor(this.value)" 
+      onchange="isPickingColor = false; activeEditor.focus(); render();" 
+      title="カスタム色" 
+      style="width:30px; height:24px; padding:0; border:none; cursor:pointer; vertical-align:middle; background:none;">
   </div>
-  </div>
+</div>
 
 
 <script>
