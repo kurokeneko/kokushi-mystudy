@@ -382,6 +382,8 @@ th {
 </div>
 
 
+  let activeEditor = null;
+  let isPickingColor = false;
 
 <script>
 /* =====================
@@ -874,7 +876,7 @@ jsonInput.onchange = e => {
 let activeTable = null;
 let activeCell = null;
 let isPickingColor = false; // カラーピッカー操作中フラグ
-let activeEditor = null;
+
 
 document.addEventListener("click", e => {
   const toolbar = document.getElementById("tableToolbar");
