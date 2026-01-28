@@ -277,6 +277,12 @@ th {
   <button onclick="cmd('bold')">太字</button>
   <button onclick="cmd('underline')">下線</button>
   <button onclick="insertTable()">表</button>
+  <span style="color:#ccc; margin: 0 4px;">|</span>
+  <button onclick="cmd('foreColor', '#ff0000')" style="color:#ff0000; font-weight:bold;">赤</button>
+  <button onclick="cmd('foreColor', '#0000ff')" style="color:#0000ff; font-weight:bold;">青</button>
+  <button onclick="cmd('foreColor', '#00aa00')" style="color:#00aa00; font-weight:bold;">緑</button>
+  <button onclick="cmd('foreColor', '#ff8800')" style="color:#ff8800; font-weight:bold;">橙</button>
+  <input type="color" oninput="cmd('foreColor', this.value)" title="カスタム色" style="width:30px; height:24px; padding:0; border:none; cursor:pointer; vertical-align:middle; background:none;">
 </div>
 
 <script>
@@ -613,11 +619,12 @@ main.append(mt);
 /* =====================
    エディタ操作
 ===================== */
- function cmd(c) {
+ function cmd(c, v = null) {
   if (!activeEditor) return;
   activeEditor.focus();
-  document.execCommand(c);
+  document.execCommand(c, false, v);
 }
+
 
 function insertTable() {
   if (!activeEditor) return;
