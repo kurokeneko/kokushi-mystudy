@@ -197,10 +197,36 @@
 
     // フィールドの初期値
     field.left = p1Deck.shift();
-    field.right = p2Deck.shift();
+    field.right = p2Dshift();
+    
+      function tryPlay(playerNum, side) {
+    const selectedIdx = (playerNum === 1) ? p1SelectedIndex : p2SelectedIndex;
+    if (selectedIdx === null) return; 
 
-    updateUI();
+    const hand = (playerNum === 1) ? p1Hand : p2Hand;
+    const deck = (playerNum === 1) ? p1Deck : p2Deck;
+    const card = hand[selectedIdx];
+    const targetCard = field[side];
+
+    if (isPlayable(card.num, targetCard.num)) {
+      field[side] = card;
+      animateField(side);
+      
+      if (deck.length > 0) {
+        hand[selectedIdx] = deck.shift();
+      } else {
+        hand[selectedIdx] = null;
+      }
+      
+      if (playerNum === 1) p1SelectedIndex = null;
+      else p2SelectedIndex = null;
+  
+      
+      // カードを出した直後に手詰まりチェックを実行
+      setTimeout(checkStuck, 500);
+    }
   }
+
 
 
     function updateUI() {
@@ -220,6 +246,17 @@
     // null（空き）を除いた手札の枚数で勝利判定
     const p1Remaining = p1Hand.filter(c => c !== null).length;
     const p2Remaining = p2Hand.filter(c => c !== null).length;
+    // フィールド更新
+    const fLeft = `${field.left.suit}${field.left.num}`;
+    const fRight = `${field.right.suit}${field.right.num}`;
+    
+    document.getElementById('p1-field-left').textContent = fLeft;
+    document.getElementById('p2-field-left').textContent = fLeft;
+    document.getElementById('p1-field-right').textContent = fRight;
+    document.getElementById('p2-field-right').textContent = fRight;
+
+    renderHand('p1-hand', p1Hand, 1);
+    renderHand('p2-hand', p2Hand, 2);
 
     if (p1Remaining === 0 && p1Deck.length === 0) alert("Player 1 WIN!");
     if (p2Remaining === 0 && p2Deck.length === 0) alert("Player 2 WIN!");
@@ -339,26 +376,15 @@
     }
 
 
-    setTimeout(() => {
-
+      setTimeout(() => {
       msgEl.style.display = 'none';
       updateUI();
-    }, 500);
-  }
-
-  // updateUIを少し改造してチェックを入れる
-  const originalUpdateUI = updateUI;
-  updateUI = function() {
-    originalUpdateUI();
-    
-    // 勝利判定が終わった後、まだゲームが続くなら手詰まりチェック
-    const p1Remaining = p1Hand.filter(c => c !== null).length + p1Deck.length;
-    const p2Remaining = p2Hand.filter(c => c !== null).length + p2Deck.length;
-    
-    if (p1Remaining > 0 && p2Remaining > 0) {
+      // 復旧させた後にまた詰まってないか確認
       setTimeout(checkStuck, 500);
-    }
-  };
+    }, 500);
+
+
+
 
 
 
