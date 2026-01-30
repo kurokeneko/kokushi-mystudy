@@ -286,12 +286,27 @@
     
     textEl.textContent = "ゴー！";
     
-    // 山札から補充。もし山札が空なら手札から無理やり出す
-    if (p1Deck.length > 0) field.left = p1Deck.shift();
-    else if (p1Hand.length > 0) field.left = p1Hand.shift();
-    
-    if (p2Deck.length > 0) field.right = p2Deck.shift();
-    else if (p2Hand.length > 0) field.right = p2Hand.shift();
+     // 山札があればそこから、なければ手札の最初の1枚を場に出す（手詰まり解消）
+    if (p1Deck.length > 0) {
+      field.left = p1Deck.shift();
+    } else {
+      const p1Available = p1Hand.findIndex(c => c !== null);
+      if (p1Available !== -1) {
+        field.left = p1Hand[p1Available];
+        p1Hand[p1Available] = null;
+      }
+    }
+
+    if (p2Deck.length > 0) {
+      field.right = p2Deck.shift();
+    } else {
+      const p2Available = p2Hand.findIndex(c => c !== null);
+      if (p2Available !== -1) {
+        field.right = p2Hand[p2Available];
+        p2Hand[p2Available] = null;
+      }
+    }
+
 
     setTimeout(() => {
 
@@ -304,9 +319,16 @@
   const originalUpdateUI = updateUI;
   updateUI = function() {
     originalUpdateUI();
-    // 描画が終わった後に手詰まりチェック（少し遅らせるとスムーズ）
-    setTimeout(checkStuck, 500);
+    
+    // 勝利判定が終わった後、まだゲームが続くなら手詰まりチェック
+    const p1Remaining = p1Hand.filter(c => c !== null).length + p1Deck.length;
+    const p2Remaining = p2Hand.filter(c => c !== null).length + p2Deck.length;
+    
+    if (p1Remaining > 0 && p2Remaining > 0) {
+      setTimeout(checkStuck, 500);
+    }
   };
+
 
 
   function isPlayable(card, target) {
