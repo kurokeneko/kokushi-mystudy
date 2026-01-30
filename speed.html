@@ -214,6 +214,50 @@
     updateUI();
   }
 
+  // お互いに出せる札があるかチェックする関数
+  function checkStuck() {
+    const allHands = [...p1Hand, ...p2Hand];
+    const canPlay = allHands.some(card => 
+      isPlayable(card, field.left) || isPlayable(card, field.right)
+    );
+
+    if (!canPlay) {
+      startStuckRecovery();
+    }
+  }
+
+  // 手詰まり解消のカウントダウン
+  async function startStuckRecovery() {
+    const msgEl = document.getElementById('control-panel');
+    const textEl = document.getElementById('msg');
+    msgEl.style.display = 'block';
+    
+    // カウントダウン演出
+    for (let i = 3; i > 0; i--) {
+      textEl.textContent = `出せる札がありません！ ${i}`;
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    
+    textEl.textContent = "ゴー！";
+    // 山札（ランダム）から新しいカードを場に出す
+    field.left = Math.floor(Math.random() * 13) + 1;
+    field.right = Math.floor(Math.random() * 13) + 1;
+    
+    setTimeout(() => {
+      msgEl.style.display = 'none';
+      updateUI();
+    }, 500);
+  }
+
+  // updateUIを少し改造してチェックを入れる
+  const originalUpdateUI = updateUI;
+  updateUI = function() {
+    originalUpdateUI();
+    // 描画が終わった後に手詰まりチェック（少し遅らせるとスムーズ）
+    setTimeout(checkStuck, 500);
+  };
+
+
   function isPlayable(card, target) {
     const diff = Math.abs(card - target);
     return diff === 1 || diff === 12;
