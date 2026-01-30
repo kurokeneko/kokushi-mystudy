@@ -82,9 +82,18 @@
       transition: transform 0.1s;
     }
 
-    .card:active {
-      transform: scale(1.05);
+        /* 選択中のカードのスタイル */
+    .selected {
+      transform: translateY(-15px) scale(1.1);
+      box-shadow: 0 0 15px var(--accent-color);
+      border: 2px solid var(--accent-color);
+      z-index: 10;
     }
+
+    .card:active {
+      transform: scale(1.1);
+    }
+
 
     /* 場のカード（共通） */
     .field-card {
@@ -131,10 +140,11 @@
 <div id="board">
   <div class="opponent-side">
     <div class="hand" id="p2-hand"></div>
-    <div class="field-area">
-      <div id="p2-field-left" class="card field-card">?</div>
-      <div id="p2-field-right" class="card field-card">?</div>
+       <div class="field-area">
+      <div id="p2-field-left" class="card field-card" onclick="tryPlay(2, 'left')">?</div>
+      <div id="p2-field-right" class="card field-card" onclick="tryPlay(2, 'right')">?</div>
     </div>
+
     <div class="area-label">PLAYER 2</div>
   </div>
 
@@ -142,10 +152,11 @@
 
   <div class="player-side">
     <div class="area-label">PLAYER 1</div>
-    <div class="field-area">
-      <div id="p1-field-left" class="card field-card">?</div>
-      <div id="p1-field-right" class="card field-card">?</div>
+      <div class="field-area">
+      <div id="p1-field-left" class="card field-card" onclick="tryPlay(1, 'left')">?</div>
+      <div id="p1-field-right" class="card field-card" onclick="tryPlay(1, 'right')">?</div>
     </div>
+
     <div class="hand" id="p1-hand"></div>
   </div>
 </div>
@@ -156,6 +167,10 @@
   let p1Deck = [];
   let p2Deck = [];
   let field = { left: null, right: null };
+  [span_0](start_span)[span_1](start_span)// 選択状態を管理する変数[span_0](end_span)[span_1](end_span)
+  let p1SelectedIndex = null;
+  let p2SelectedIndex = null;
+
   const suits = ['♠', '♥', '♦', '♣'];
 
   function startGame() {
@@ -211,53 +226,69 @@
 
   }
 
-    function renderHand(elementId, hand, playerNum) {
+     function renderHand(elementId, hand, playerNum) {
     const el = document.getElementById(elementId);
     el.innerHTML = '';
+    [span_2](start_span)const selectedIdx = (playerNum === 1) ? p1SelectedIndex : p2SelectedIndex;[span_2](end_span)
+
     hand.forEach((cardObj, i) => {
       const cardEl = document.createElement('div');
       cardEl.className = 'card';
       
       if (cardObj) {
-        // カードがある場合
         if (cardObj.suit === '♥' || cardObj.suit === '♦') cardEl.style.color = 'red';
         cardEl.textContent = `${cardObj.suit}${cardObj.num}`;
-        cardEl.onclick = () => tryPlay(playerNum, i);
+        
+        [span_3](start_span)// 選択中ならクラスを付与[span_3](end_span)
+        if (i === selectedIdx) cardEl.classList.add('selected');
+        
+        // クリックで「選択」する
+        cardEl.onclick = () => selectCard(playerNum, i);
       } else {
-        // カードがない（空きスロット）場合
         cardEl.style.visibility = 'hidden'; 
       }
-      
       el.appendChild(cardEl);
     });
   }
 
-
-
-    function tryPlay(playerNum, cardIndex) {
-    const hand = (playerNum === 1) ? p1Hand : p2Hand;
-    const deck = (playerNum === 1) ? p1Deck : p2Deck;
-    const card = hand[cardIndex];
-
-    if (isPlayable(card.num, field.left.num)) {
-      field.left = card;
-      animateField('left');
-    } else if (isPlayable(card.num, field.right.num)) {
-      field.right = card;
-      animateField('right');
-    } else {
-      return;
-    }
-
-     // 出した場所（cardIndex）を、山札があるなら補充、なければ空（null）にする
-    if (deck.length > 0) {
-      hand[cardIndex] = deck.shift();
-    } else {
-      hand[cardIndex] = null;
-    }
-
+  // 札を選択する関数
+  function selectCard(playerNum, index) {
+    if (playerNum === 1) p1SelectedIndex = (p1SelectedIndex === index) ? null : index;
+    else p2SelectedIndex = (p2SelectedIndex === index) ? null : index;
     updateUI();
   }
+
+
+
+
+      function tryPlay(playerNum, side) {
+    const selectedIdx = (playerNum === 1) ? p1SelectedIndex : p2SelectedIndex;
+    if (selectedIdx === null) return; [span_4](start_span)// 札が選ばれてなければ何もしない[span_4](end_span)
+
+    const hand = (playerNum === 1) ? p1Hand : p2Hand;
+    const deck = (playerNum === 1) ? p1Deck : p2Deck;
+    const card = hand[selectedIdx];
+    const targetCard = field[side];
+
+    [span_5](start_span)if (isPlayable(card.num, targetCard.num)) {[span_5](end_span)
+      field[side] = card;
+      animateField(side);
+      
+      // 補充
+      if (deck.length > 0) {
+        hand[selectedIdx] = deck.shift();
+      } else {
+        hand[selectedIdx] = null;
+      }
+      
+      // 選択状態をリセット
+      if (playerNum === 1) p1SelectedIndex = null;
+      else p2SelectedIndex = null;
+      
+      updateUI();
+    }
+  }
+
 
 
   function checkStuck() {
