@@ -202,22 +202,36 @@
     renderHand('p2-hand', p2Hand, 2);
     
     // 勝利判定
-    if (p1Hand.length === 0 && p1Deck.length === 0) alert("Player 1 WIN!");
-    if (p2Hand.length === 0 && p2Deck.length === 0) alert("Player 2 WIN!");
+    // null（空き）を除いた手札の枚数で勝利判定
+    const p1Remaining = p1Hand.filter(c => c !== null).length;
+    const p2Remaining = p2Hand.filter(c => c !== null).length;
+
+    if (p1Remaining === 0 && p1Deck.length === 0) alert("Player 1 WIN!");
+    if (p2Remaining === 0 && p2Deck.length === 0) alert("Player 2 WIN!");
+
   }
 
-  function renderHand(elementId, hand, playerNum) {
+    function renderHand(elementId, hand, playerNum) {
     const el = document.getElementById(elementId);
     el.innerHTML = '';
     hand.forEach((cardObj, i) => {
       const cardEl = document.createElement('div');
       cardEl.className = 'card';
-      if (cardObj.suit === '♥' || cardObj.suit === '♦') cardEl.style.color = 'red';
-      cardEl.textContent = `${cardObj.suit}${cardObj.num}`;
-      cardEl.onclick = () => tryPlay(playerNum, i);
+      
+      if (cardObj) {
+        // カードがある場合
+        if (cardObj.suit === '♥' || cardObj.suit === '♦') cardEl.style.color = 'red';
+        cardEl.textContent = `${cardObj.suit}${cardObj.num}`;
+        cardEl.onclick = () => tryPlay(playerNum, i);
+      } else {
+        // カードがない（空きスロット）場合
+        cardEl.style.visibility = 'hidden'; 
+      }
+      
       el.appendChild(cardEl);
     });
   }
+
 
 
     function tryPlay(playerNum, cardIndex) {
@@ -235,19 +249,23 @@
       return;
     }
 
-    hand.splice(cardIndex, 1);
+     // 出した場所（cardIndex）を、山札があるなら補充、なければ空（null）にする
     if (deck.length > 0) {
-      hand.push(deck.shift());
+      hand[cardIndex] = deck.shift();
+    } else {
+      hand[cardIndex] = null;
     }
+
     updateUI();
   }
 
 
   function checkStuck() {
-    const allHands = [...p1Hand, ...p2Hand];
+     const allHands = [...p1Hand, ...p2Hand].filter(c => c !== null); // 空スロットを除外してチェック
     const canPlay = allHands.some(c => 
       isPlayable(c.num, field.left.num) || isPlayable(c.num, field.right.num)
     );
+
     if (!canPlay) {
       startStuckRecovery();
     }
