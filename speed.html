@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>SPEED - Table Battle</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">
+  <style>
+    :root {
+      --bg-color: #1a472a;
+      --card-white: #ffffff;
+      --card-text: #333;
+      --p1-color: #2196f3;
+      --p2-color: #f44336;
+      --accent-color: #ffd700;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Noto Sans JP', sans-serif;
+      background-color: var(--bg-color);
+      color: white;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      touch-action: none; /* 誤操作防止 */
+    }
+
+    #board {
+      width: 100%;
+      max-width: 600px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    /* 相手側（上）を180度回転 */
+    .opponent-side {
+      transform: rotate(180deg);
+    }
+
+    .area-label {
+      font-size: 14px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      text-align: center;
+      opacity: 0.8;
+    }
+
+    .hand {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      min-height: 100px;
+    }
+
+    .field-area {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin: 20px 0;
+    }
+
+    .card {
+      width: 65px;
+      height: 90px;
+      background: var(--card-white);
+      border-radius: 8px;
+      color: var(--card-text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 24px;
+      font-weight: bold;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+
+    .card:active {
+      transform: scale(1.05);
+    }
+
+    /* 場のカード（共通） */
+    .field-card {
+      border: 3px solid var(--accent-color);
+      background: #f0f0f0;
+    }
+
+    .pop {
+      animation: popAnim 0.2s ease-out;
+    }
+    @keyframes popAnim {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+      100% { transform: scale(1); }
+    }
+
+    #control-panel {
+      position: absolute;
+      background: rgba(0,0,0,0.7);
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+      z-index: 100;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      font-weight: bold;
+      background: var(--accent-color);
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div id="control-panel">
+  <p id="msg">タブレットを真ん中に置いて対戦！</p>
+  <button onclick="startGame()">ゲームスタート</button>
+</div>
+
+<div id="board">
+  <div class="opponent-side">
+    <div class="hand" id="p2-hand"></div>
+    <div class="field-area">
+      <div id="p2-field-left" class="card field-card">?</div>
+      <div id="p2-field-right" class="card field-card">?</div>
+    </div>
+    <div class="area-label">PLAYER 2</div>
+  </div>
+
+  <hr style="width: 100%; opacity: 0.2;">
+
+  <div class="player-side">
+    <div class="area-label">PLAYER 1</div>
+    <div class="field-area">
+      <div id="p1-field-left" class="card field-card">?</div>
+      <div id="p1-field-right" class="card field-card">?</div>
+    </div>
+    <div class="hand" id="p1-hand"></div>
+  </div>
+</div>
+
+<script>
+  let p1Hand = [];
+  let p2Hand = [];
+  let field = { left: 0, right: 0 };
+
+  function startGame() {
+    document.getElementById('control-panel').style.display = 'none';
+    
+    // 山札の準備とシャッフル
+    p1Hand = Array.from({length: 4}, () => Math.floor(Math.random() * 13) + 1);
+    p2Hand = Array.from({length: 4}, () => Math.floor(Math.random() * 13) + 1);
+    field.left = Math.floor(Math.random() * 13) + 1;
+    field.right = Math.floor(Math.random() * 13) + 1;
+
+    updateUI();
+  }
+
+  function updateUI() {
+    // フィールド同期（両方のエリアを更新）
+    const fields = ['p1-field-left', 'p2-field-left', 'p1-field-right', 'p2-field-right'];
+    document.getElementById('p1-field-left').textContent = field.left;
+    document.getElementById('p2-field-left').textContent = field.left;
+    document.getElementById('p1-field-right').textContent = field.right;
+    document.getElementById('p2-field-right').textContent = field.right;
+
+    // P1手札
+    renderHand('p1-hand', p1Hand, 1);
+    // P2手札
+    renderHand('p2-hand', p2Hand, 2);
+  }
+
+  function renderHand(elementId, hand, playerNum) {
+    const el = document.getElementById(elementId);
+    el.innerHTML = '';
+    hand.forEach((num, i) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.textContent = num;
+      card.onclick = () => tryPlay(playerNum, i);
+      el.appendChild(card);
+    });
+  }
+
+  function tryPlay(playerNum, cardIndex) {
+    const hand = (playerNum === 1) ? p1Hand : p2Hand;
+    const cardNum = hand[cardIndex];
+
+    // 左か右に出せるか判定
+    if (isPlayable(cardNum, field.left)) {
+      field.left = cardNum;
+      animateField('left');
+    } else if (isPlayable(cardNum, field.right)) {
+      field.right = cardNum;
+      animateField('right');
+    } else {
+      return; // 出せない
+    }
+
+    // 成功したら手札補充
+    hand.splice(cardIndex, 1);
+    hand.push(Math.floor(Math.random() * 13) + 1);
+    updateUI();
+  }
+
+  function isPlayable(card, target) {
+    const diff = Math.abs(card - target);
+    return diff === 1 || diff === 12;
+  }
+
+  function animateField(side) {
+    const suffix = (side === 'left') ? 'left' : 'right';
+    const ids = [`p1-field-${suffix}`, `p2-field-${suffix}`];
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      el.classList.add('pop');
+      setTimeout(() => el.classList.remove('pop'), 200);
+    });
+  }
+</script>
+</body>
+</html>
