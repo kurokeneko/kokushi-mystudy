@@ -150,10 +150,20 @@
   </div>
 </div>
 
-<script>
-  let p1Hand = [];
-  let p2Hand = [];
+  let p1Hand = [], p1Stock = [];
+  let p2Hand = [], p2Stock = [];
   let field = { left: 0, right: 0 };
+
+  // ゲーム開始時に山札を20枚ずつ配る
+  function setupDecks() {
+    p1Stock = Array.from({length: 20}, () => Math.floor(Math.random() * 13) + 1);
+    p2Stock = Array.from({length: 20}, () => Math.floor(Math.random() * 13) + 1);
+  }
+  // startGameの中で setupDecks() を呼ぶようにしてね！
+
+
+<script>
+  
 
   function startGame() {
     document.getElementById('control-panel').style.display = 'none';
@@ -192,6 +202,25 @@
       el.appendChild(card);
     });
   }
+    // 成功したら手札を減らす
+    hand.splice(cardIndex, 1);
+
+    // 山札があれば補充
+    const stock = (playerNum === 1) ? p1Stock : p2Stock;
+    if (stock.length > 0) {
+      hand.push(stock.pop());
+    }
+
+    updateUI();
+
+    // 勝利判定
+    if (hand.length === 0) {
+      const winner = (playerNum === 1) ? "PLAYER 1" : "PLAYER 2";
+      setTimeout(() => {
+        alert(`おめでとう！ ${winner} の勝利です！`);
+        location.reload(); // リロードして最初から
+      }, 300);
+    }
 
   function tryPlay(playerNum, cardIndex) {
     const hand = (playerNum === 1) ? p1Hand : p2Hand;
@@ -208,11 +237,50 @@
       return; // 出せない
     }
 
-    // 成功したら手札補充
-    hand.splice(cardIndex, 1);
-    hand.push(Math.floor(Math.random() * 13) + 1);
-    updateUI();
+  
   }
+  // お互いに出せる札があるかチェックする関数
+  function checkStuck() {
+    const allHands = [...p1Hand, ...p2Hand];
+    const canPlay = allHands.some(card => 
+      isPlayable(card, field.left) || isPlayable(card, field.right)
+    );
+
+    if (!canPlay) {
+      startStuckRecovery();
+    }
+  }
+
+  // 手詰まり解消のカウントダウン
+  async function startStuckRecovery() {
+    const msgEl = document.getElementById('control-panel');
+    const textEl = document.getElementById('msg');
+    msgEl.style.display = 'block';
+    
+    // カウントダウン演出
+    for (let i = 3; i > 0; i--) {
+      textEl.textContent = `出せる札がありません！ ${i}`;
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    
+    textEl.textContent = "ゴー！";
+    // 山札（ランダム）から新しいカードを場に出す
+    field.left = Math.floor(Math.random() * 13) + 1;
+    field.right = Math.floor(Math.random() * 13) + 1;
+    
+    setTimeout(() => {
+      msgEl.style.display = 'none';
+      updateUI();
+    }, 500);
+  }
+
+  // updateUIを少し改造してチェックを入れる
+  const originalUpdateUI = updateUI;
+  updateUI = function() {
+    originalUpdateUI();
+    // 描画が終わった後に手詰まりチェック（少し遅らせるとスムーズ）
+    setTimeout(checkStuck, 500);
+  };
 
   function isPlayable(card, target) {
     const diff = Math.abs(card - target);
