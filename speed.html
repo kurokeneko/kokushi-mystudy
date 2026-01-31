@@ -25,7 +25,7 @@
       justify-content: center;
       align-items: center;
       overflow: hidden;
-      touch-action: none;
+      touch-action: none; /* 誤操作防止 */
     }
 
     #board {
@@ -39,6 +39,7 @@
       box-sizing: border-box;
     }
 
+    /* 相手側（上）を180度回転 */
     .opponent-side {
       transform: rotate(180deg);
     }
@@ -74,18 +75,18 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 20px;
+      font-size: 24px;
       font-weight: bold;
       box-shadow: 0 4px 6px rgba(0,0,0,0.3);
       cursor: pointer;
       transition: transform 0.1s;
-      user-select: none;
     }
 
     .card:active {
       transform: scale(1.05);
     }
 
+    /* 場のカード（共通） */
     .field-card {
       border: 3px solid var(--accent-color);
       background: #f0f0f0;
@@ -102,35 +103,28 @@
 
     #control-panel {
       position: absolute;
-      background: rgba(0,0,0,0.85);
-      padding: 20px;
+      background: rgba(0,0,0,0.7);
+      padding: 15px;
       border-radius: 10px;
       text-align: center;
       z-index: 100;
-      box-shadow: 0 0 20px rgba(0,0,0,0.5);
     }
 
     button {
       padding: 10px 20px;
-      font-size: 18px;
+      font-size: 16px;
       font-weight: bold;
       background: var(--accent-color);
       border: none;
       border-radius: 5px;
       cursor: pointer;
     }
-
-    .deck-info {
-      font-size: 12px;
-      margin-top: 5px;
-      opacity: 0.7;
-    }
   </style>
 </head>
 <body>
 
 <div id="control-panel">
-  <p id="msg">すぴーどーーー</p>
+  <p id="msg">タブレットを真ん中に置いて対戦！</p>
   <button onclick="startGame()">ゲームスタート</button>
 </div>
 
@@ -141,13 +135,13 @@
       <div id="p2-field-left" class="card field-card">?</div>
       <div id="p2-field-right" class="card field-card">?</div>
     </div>
-    <div class="area-label">PLAYER 2 <span id="p2-deck-count" class="deck-info"></span></div>
+    <div class="area-label">PLAYER 2</div>
   </div>
 
   <hr style="width: 100%; opacity: 0.2;">
 
   <div class="player-side">
-    <div class="area-label">PLAYER 1 <span id="p1-deck-count" class="deck-info"></span></div>
+    <div class="area-label">PLAYER 1</div>
     <div class="field-area">
       <div id="p1-field-left" class="card field-card">?</div>
       <div id="p1-field-right" class="card field-card">?</div>
@@ -159,177 +153,79 @@
 <script>
   let p1Hand = [];
   let p2Hand = [];
-  let p1Deck = [];
-  let p2Deck = [];
-  let field = { left: null, right: null };
-  const suits = ['♠', '♥', '♦', '♣'];
-  let isProcessingStuck = false;
+  let field = { left: 0, right: 0 };
 
   function startGame() {
     document.getElementById('control-panel').style.display = 'none';
-    isProcessingStuck = false;
     
-    [span_0](start_span)// 52枚のカードを作成[span_0](end_span)
-    let allCards = [];
-    for (let s of suits) {
-      for (let n = 1; n <= 13; n++) {
-        [span_1](start_span)allCards.push({ num: n, suit: s });[span_1](end_span)
-      }
-    }
-
-    [span_2](start_span)// シャッフル[span_2](end_span)
-    allCards.sort(() => Math.random() - 0.5);
-
-    [span_3](start_span)// 26枚ずつ分ける[span_3](end_span)
-    p1Deck = allCards.slice(0, 26);
-    p2Deck = allCards.slice(26, 52);
-
-    [span_4](start_span)// 手札4枚ずつ配る[span_4](end_span)
-    p1Hand = p1Deck.splice(0, 4);
-    p2Hand = p2Deck.splice(0, 4);
-
-    [span_5](start_span)// 場の初期カード[span_5](end_span)
-    field.left = p1Deck.shift();
-    field.right = p2Deck.shift();
+    // 山札の準備とシャッフル
+    p1Hand = Array.from({length: 4}, () => Math.floor(Math.random() * 13) + 1);
+    p2Hand = Array.from({length: 4}, () => Math.floor(Math.random() * 13) + 1);
+    field.left = Math.floor(Math.random() * 13) + 1;
+    field.right = Math.floor(Math.random() * 13) + 1;
 
     updateUI();
   }
 
   function updateUI() {
-    [span_6](start_span)// フィールド表示の更新[span_6](end_span)
-    const fLeftStr = `${field.left.suit}${field.left.num}`;
-    const fRightStr = `${field.right.suit}${field.right.num}`;
-    
-    document.getElementById('p1-field-left').textContent = fLeftStr;
-    document.getElementById('p2-field-left').textContent = fLeftStr;
-    document.getElementById('p1-field-right').textContent = fRightStr;
-    document.getElementById('p2-field-right').textContent = fRightStr;
+    // フィールド同期（両方のエリアを更新）
+    const fields = ['p1-field-left', 'p2-field-left', 'p1-field-right', 'p2-field-right'];
+    document.getElementById('p1-field-left').textContent = field.left;
+    document.getElementById('p2-field-left').textContent = field.left;
+    document.getElementById('p1-field-right').textContent = field.right;
+    document.getElementById('p2-field-right').textContent = field.right;
 
-    // マークの色付け
-    setColor(document.getElementById('p1-field-left'), field.left.suit);
-    setColor(document.getElementById('p2-field-left'), field.left.suit);
-    setColor(document.getElementById('p1-field-right'), field.right.suit);
-    setColor(document.getElementById('p2-field-right'), field.right.suit);
-
+    // P1手札
     renderHand('p1-hand', p1Hand, 1);
+    // P2手札
     renderHand('p2-hand', p2Hand, 2);
-
-    // 山札残り枚数の表示
-    document.getElementById('p1-deck-count').textContent = `(残り:${p1Deck.length})`;
-    document.getElementById('p2-deck-count').textContent = `(残り:${p2Deck.length})`;
-    
-    [span_7](start_span)// 勝利判定[span_7](end_span)
-    if (p1Hand.length === 0 && p1Deck.length === 0) {
-      alert("PLAYER 1 WIN!");
-      location.reload();
-      return;
-    }
-    if (p2Hand.length === 0 && p2Deck.length === 0) {
-      alert("PLAYER 2 WIN!");
-      location.reload();
-      return;
-    }
-
-    // 手詰まりチェックを予約
-    setTimeout(checkStuck, 800);
-  }
-
-  function setColor(el, suit) {
-    el.style.color = (suit === '♥' || suit === '♦') ? 'red' : '#333';
   }
 
   function renderHand(elementId, hand, playerNum) {
     const el = document.getElementById(elementId);
     el.innerHTML = '';
-    hand.forEach((cardObj, i) => {
-      const cardEl = document.createElement('div');
-      cardEl.className = 'card';
-      setColor(cardEl, cardObj.suit);
-      cardEl.textContent = `${cardObj.suit}${cardObj.num}`;
-      cardEl.onclick = () => tryPlay(playerNum, i);
-      el.appendChild(cardEl);
+    hand.forEach((num, i) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.textContent = num;
+      card.onclick = () => tryPlay(playerNum, i);
+      el.appendChild(card);
     });
   }
 
   function tryPlay(playerNum, cardIndex) {
-    if (isProcessingStuck) return;
-
     const hand = (playerNum === 1) ? p1Hand : p2Hand;
-    const deck = (playerNum === 1) ? p1Deck : p2Deck;
-    const card = hand[cardIndex];
+    const cardNum = hand[cardIndex];
 
-    [span_8](start_span)// 出せるか判定[span_8](end_span)
-    if (isPlayable(card.num, field.left.num)) {
-      field.left = card;
+    // 左か右に出せるか判定
+    if (isPlayable(cardNum, field.left)) {
+      field.left = cardNum;
       animateField('left');
-    } else if (isPlayable(card.num, field.right.num)) {
-      field.right = card;
+    } else if (isPlayable(cardNum, field.right)) {
+      field.right = cardNum;
       animateField('right');
     } else {
-      return;
+      return; // 出せない
     }
 
-    // 出した場所に補充するロジック
-    if (deck.length > 0) {
-      hand.splice(cardIndex, 1, deck.shift());
-    } else {
-      hand.splice(cardIndex, 1);
-    }
-    
+    // 成功したら手札補充
+    hand.splice(cardIndex, 1);
+    hand.push(Math.floor(Math.random() * 13) + 1);
     updateUI();
   }
 
   function isPlayable(card, target) {
     const diff = Math.abs(card - target);
-    return diff === 1 || diff === 12; [span_9](start_span)// 1と13も繋がる[span_9](end_span)
-  }
-
-  function checkStuck() {
-    if (isProcessingStuck) return;
-    
-    const allHands = [...p1Hand, ...p2Hand];
-    const canPlay = allHands.some(c => 
-      isPlayable(c.num, field.left.num) || isPlayable(c.num, field.right.num)
-    );
-    
-    if (!canPlay && (p1Hand.length > 0 || p2Hand.length > 0)) {
-      startStuckRecovery();
-    }
-  }
-
-  async function startStuckRecovery() {
-    isProcessingStuck = true;
-    const msgEl = document.getElementById('control-panel');
-    const textEl = document.getElementById('msg');
-    msgEl.style.display = 'block';
-    
-    for (let i = 3; i > 0; i--) {
-      [span_10](start_span)textEl.textContent = `出せる札がありません！ ${i}`;[span_10](end_span)
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
-    
-    [span_11](start_span)textEl.textContent = "ゴー！";[span_11](end_span)
-
-    // 山札から優先、なければ手札から場に出す
-    if (p1Deck.length > 0) field.left = p1Deck.shift();
-    else if (p1Hand.length > 0) field.left = p1Hand.shift();
-    
-    if (p2Deck.length > 0) field.right = p2Deck.shift();
-    else if (p2Hand.length > 0) field.right = p2Hand.shift();
-
-    setTimeout(() => {
-      msgEl.style.display = 'none';
-      isProcessingStuck = false;
-      updateUI();
-    }, 800);
+    return diff === 1 || diff === 12;
   }
 
   function animateField(side) {
-    const ids = [`p1-field-${side}`, `p2-field-${side}`];
+    const suffix = (side === 'left') ? 'left' : 'right';
+    const ids = [`p1-field-${suffix}`, `p2-field-${suffix}`];
     ids.forEach(id => {
       const el = document.getElementById(id);
       el.classList.add('pop');
-      [span_12](start_span)setTimeout(() => el.classList.remove('pop'), 200);[span_12](end_span)
+      setTimeout(() => el.classList.remove('pop'), 200);
     });
   }
 </script>
