@@ -208,6 +208,86 @@
                 ['L', 'R'].forEach((side, idx) => {
                     const slot = document.getElementById(`${p}-field-${side}`);
                     slot.innerHTML = '';
+                    
+                            // 詰み状態（両者出せない）かチェックするフラグ
+        let isStuck = false;
+
+        function checkStuck() {
+            const p1CanMove = p1Hand.some(c => canPlace(c.val, fieldCards[0].val) || canPlace(c.val, fieldCards[1].val));
+            const p2CanMove = p2Hand.some(c => canPlace(c.val, fieldCards[0].val) || canPlace(c.val, fieldCards[1].val));
+            isStuck = (!p1CanMove && !p2CanMove);
+        }
+
+        // updateField内を以下のように書き換え（光る条件を変更）
+        function updateField() {
+            ['p1', 'p2'].forEach(p => {
+                ['L', 'R'].forEach((side, idx) => {
+                    const slot = document.getElementById(`${p}-field-${side}`);
+                    slot.innerHTML = '';
+                    const card = fieldCards[idx];
+                    const cardDiv = document.createElement('div');
+                    cardDiv.className = `card ${isRed(card.suit) ? 'red' : 'black'}`;
+                    cardDiv.innerText = getCardText(card);
+                    
+                    if (selectedIdx !== null) {
+                        if (isStuck) {
+                            // 詰み状態なら、自分から見て右側（idx 1）だけを光らせる
+                            if (idx === 1) {
+                                cardDiv.classList.add('highlight');
+                                cardDiv.onclick = () => resetByManualCard(idx);
+                            }
+                        } else if (canPlace(getPlayerHand()[selectedIdx].val, card.val)) {
+                            // 通常時は出せる場所を光らせる
+                            cardDiv.classList.add('highlight');
+                            cardDiv.onclick = () => playCard(idx);
+                        }
+                    }
+                    slot.appendChild(cardDiv);
+                });
+            });
+        }
+
+        // 手札から強制的に場に出した時の処理
+        async function resetByManualCard(fieldIdx) {
+            const hand = getPlayerHand();
+            const deck = getPlayerDeck();
+            
+            // 選んだ手札を右側に置く
+            fieldCards[fieldIdx] = hand[selectedIdx];
+            if (deck.length > 0) {
+                hand[selectedIdx] = deck.pop();
+            } else {
+                hand.splice(selectedIdx, 1);
+            }
+            
+            selectedIdx = null;
+            activePlayer = null;
+            isStuck = false; // 一旦解除
+            render();
+
+            // ここから3,2,1カウントダウン
+            await startCountdown();
+        }
+
+        async function startCountdown() {
+            const overlay = document.getElementById('overlay');
+            overlay.style.display = 'flex';
+            for (let i = 3; i > 0; i--) {
+                overlay.innerText = i;
+                await new Promise(r => setTimeout(r, 500));
+            }
+            overlay.style.display = 'none';
+            
+            // カウントダウン終了後に山札から両方の場に出す
+            if (p1Deck.length > 0) fieldCards[0] = p1Deck.pop();
+            if (p2Deck.length > 0) fieldCards[1] = p2Deck.pop();
+            
+            render();
+            checkStuck(); // 再度チェック
+            if (isStuck) render(); // 連続で詰んでる場合に光らせるため
+        }
+
+                    
                     const card = fieldCards[idx];
                     const cardDiv = document.createElement('div');
                     cardDiv.className = `card ${isRed(card.suit) ? 'red' : 'black'}`;
@@ -260,15 +340,7 @@
             checkStuck();
         }
 
-        // 両者出せないかチェック
-        function checkStuck() {
-            const p1CanMove = p1Hand.some(c => canPlace(c.val, fieldCards[0].val) || canPlace(c.val, fieldCards[1].val));
-            const p2CanMove = p2Hand.some(c => canPlace(c.val, fieldCards[0].val) || canPlace(c.val, fieldCards[1].val));
-            
-            if (!p1CanMove && !p2CanMove) {
-                startCountdown();
-            }
-        }
+      
 
         async function startCountdown() {
             const overlay = document.getElementById('overlay');
@@ -279,9 +351,7 @@
             }
             overlay.style.display = 'none';
             
-            // 強制補充
-            if (p1Deck.length > 0) fieldCards[0] = p1Deck.pop();
-            if (p2Deck.length > 0) fieldCards[1] = p2Deck.pop();
+
             render();
             checkStuck();
         }
