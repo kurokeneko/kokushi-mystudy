@@ -2,35 +2,63 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>今日のお昼ルーレット</title>
+<title>ドキドキ昼飯ルーレット</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background: #f7f7f7;
-    padding: 20px;
+    background: linear-gradient(135deg, #fdfbfb, #ebedee);
     text-align: center;
+    padding: 30px;
   }
+
   h1 {
-    margin-bottom: 10px;
+    margin-bottom: 20px;
   }
+
   select, button {
     font-size: 16px;
     padding: 10px;
-    margin: 10px 0;
     width: 100%;
     max-width: 320px;
+    margin-bottom: 15px;
   }
-  #result {
-    margin-top: 20px;
-    font-size: 22px;
+
+  #roulette {
+    margin-top: 30px;
+    font-size: 28px;
     font-weight: bold;
+    height: 50px;
+    transition: transform 0.2s;
+  }
+
+  .shake {
+    animation: shake 0.15s infinite;
+  }
+
+  @keyframes shake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    50% { transform: translateX(4px); }
+    75% { transform: translateX(-4px); }
+    100% { transform: translateX(0); }
+  }
+
+  .final {
+    color: #e60023;
+    animation: pop 0.6s ease-out;
+  }
+
+  @keyframes pop {
+    0% { transform: scale(0.8); opacity: 0; }
+    60% { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(1); }
   }
 </style>
 </head>
 <body>
 
-<h1>🍴 今日のお昼決めるやつ</h1>
+<h1>🍴 今日のお昼ルーレット</h1>
 
 <select id="mood">
   <option value="和食">和食気分</option>
@@ -43,9 +71,9 @@
   <option value="all">なんでもいい</option>
 </select>
 
-<button onclick="drawLunch()">抽選する！</button>
+<button onclick="startRoulette()">回す！</button>
 
-<div id="result"></div>
+<div id="roulette">？？？</div>
 
 <script>
 const shops = [
@@ -75,27 +103,42 @@ const shops = [
   { name: "コンビニ", star: 2, mood: ["買い出し"] }
 ];
 
-function drawLunch() {
-  const selectedMood = document.getElementById("mood").value;
+function buildPool(mood) {
   let pool = [];
-
-  shops.forEach(shop => {
-    let weight = 1;
-
-    if (selectedMood !== "all") {
-      weight = shop.star;
-      if (shop.mood.includes(selectedMood)) {
-        weight *= 2; // 気分一致で2倍
-      }
+  shops.forEach(s => {
+    let weight = mood === "all" ? 1 : s.star;
+    if (mood !== "all" && s.mood.includes(mood)) {
+      weight *= 2;
     }
-
-    for (let i = 0; i < weight; i++) {
-      pool.push(shop.name);
-    }
+    for (let i = 0; i < weight; i++) pool.push(s.name);
   });
+  return pool;
+}
 
-  const result = pool[Math.floor(Math.random() * pool.length)];
-  document.getElementById("result").textContent = `👉 今日のお昼は「${result}」！`;
+function startRoulette() {
+  const mood = document.getElementById("mood").value;
+  const pool = buildPool(mood);
+  const display = document.getElementById("roulette");
+
+  display.className = "shake";
+  let count = 0;
+  let speed = 50;
+  const maxCount = 30 + Math.floor(Math.random() * 20);
+
+  function spin() {
+    display.textContent = pool[Math.floor(Math.random() * pool.length)];
+    count++;
+    speed += 10; // だんだん減速
+
+    if (count < maxCount) {
+      setTimeout(spin, speed);
+    } else {
+      display.className = "final";
+      display.textContent = `🎯 ${display.textContent}！`;
+    }
+  }
+
+  spin();
 }
 </script>
 
