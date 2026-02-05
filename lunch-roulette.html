@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>今日のお昼ルーレット</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #f7f7f7;
+    padding: 20px;
+    text-align: center;
+  }
+  h1 {
+    margin-bottom: 10px;
+  }
+  select, button {
+    font-size: 16px;
+    padding: 10px;
+    margin: 10px 0;
+    width: 100%;
+    max-width: 320px;
+  }
+  #result {
+    margin-top: 20px;
+    font-size: 22px;
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+
+<h1>🍴 今日のお昼決めるやつ</h1>
+
+<select id="mood">
+  <option value="和食">和食気分</option>
+  <option value="洋食">洋食気分</option>
+  <option value="中華">中華気分</option>
+  <option value="アメリカン">アメリカン</option>
+  <option value="ラーメン">ラーメン気分</option>
+  <option value="エスニック">エスニック気分</option>
+  <option value="買い出し">買い出し気分</option>
+  <option value="all">なんでもいい</option>
+</select>
+
+<button onclick="drawLunch()">抽選する！</button>
+
+<div id="result"></div>
+
+<script>
+const shops = [
+  { name: "松屋", star: 1, mood: ["和食"] },
+  { name: "すき家", star: 2, mood: ["和食"] },
+  { name: "はなまるうどん", star: 2, mood: ["和食"] },
+  { name: "長崎ちゃんぽん", star: 2, mood: ["和食"] },
+
+  { name: "サイゼリヤ", star: 5, mood: ["洋食"] },
+  { name: "ココス", star: 2, mood: ["洋食"] },
+
+  { name: "東方餃子房", star: 3, mood: ["中華"] },
+  { name: "一品香", star: 2, mood: ["中華"] },
+
+  { name: "マック", star: 5, mood: ["アメリカン"] },
+  { name: "ケンタッキー", star: 4, mood: ["アメリカン"] },
+  { name: "ウェンディーズ", star: 3, mood: ["アメリカン"] },
+
+  { name: "TSUKASA", star: 3, mood: ["ラーメン"] },
+  { name: "七志", star: 2, mood: ["ラーメン"] },
+  { name: "幸楽苑", star: 2, mood: ["ラーメン"] },
+
+  { name: "キングカリー", star: 3, mood: ["エスニック"] },
+  { name: "マリカ", star: 3, mood: ["エスニック"] },
+
+  { name: "スーパー", star: 4, mood: ["買い出し"] },
+  { name: "コンビニ", star: 2, mood: ["買い出し"] }
+];
+
+function drawLunch() {
+  const selectedMood = document.getElementById("mood").value;
+  let pool = [];
+
+  shops.forEach(shop => {
+    let weight = 1;
+
+    if (selectedMood !== "all") {
+      weight = shop.star;
+      if (shop.mood.includes(selectedMood)) {
+        weight *= 2; // 気分一致で2倍
+      }
+    }
+
+    for (let i = 0; i < weight; i++) {
+      pool.push(shop.name);
+    }
+  });
+
+  const result = pool[Math.floor(Math.random() * pool.length)];
+  document.getElementById("result").textContent = `👉 今日のお昼は「${result}」！`;
+}
+</script>
+
+</body>
+</html>
