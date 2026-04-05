@@ -1,71 +1,82 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<title>シフトカレンダー</title>
-<style>
-  body { font-family: sans-serif; text-align: center; }
-  table { margin: 20px auto; border-collapse: collapse; }
-  td { width: 60px; height: 60px; border: 1px solid #ccc; cursor: pointer; }
-  .shift-btn { margin: 5px; padding: 10px; }
-</style>
+  <meta charset="UTF-8">
+  <title>簡単カレンダー</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+    }
+    table {
+      margin: 20px auto;
+      border-collapse: collapse;
+    }
+    th, td {
+      width: 50px;
+      height: 50px;
+      border: 1px solid #ccc;
+    }
+    th {
+      background: #f0f0f0;
+    }
+    .today {
+      background: #ffeb3b;
+    }
+  </style>
 </head>
 <body>
 
 <h2 id="title"></h2>
-
-<div>
-  <button class="shift-btn" onclick="setShift('日')">日勤</button>
-  <button class="shift-btn" onclick="setShift('夜')">夜勤</button>
-  <button class="shift-btn" onclick="setShift('休')">休み</button>
-</div>
-
-<table id="calendar"><tbody></tbody></table>
+<table id="calendar">
+  <thead>
+    <tr>
+      <th>日</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th>土</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
 
 <script>
-let selectedShift = "";
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth();
 
-function setShift(shift) {
-  selectedShift = shift;
-}
+  document.getElementById("title").textContent = `${year}年 ${month+1}月`;
 
-const today = new Date();
-const year = today.getFullYear();
-const month = today.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const lastDate = new Date(year, month + 1, 0).getDate();
 
-document.getElementById("title").textContent = `${year}年 ${month+1}月`;
+  const tbody = document.querySelector("#calendar tbody");
+  let row = document.createElement("tr");
 
-const firstDay = new Date(year, month, 1).getDay();
-const lastDate = new Date(year, month + 1, 0).getDate();
-
-const tbody = document.querySelector("#calendar tbody");
-let row = document.createElement("tr");
-
-for (let i = 0; i < firstDay; i++) {
-  row.appendChild(document.createElement("td"));
-}
-
-for (let date = 1; date <= lastDate; date++) {
-  const cell = document.createElement("td");
-
-  const key = `${year}-${month}-${date}`;
-  cell.innerHTML = date + "<br>" + (localStorage.getItem(key) || "");
-
-  cell.onclick = () => {
-    if (!selectedShift) return;
-    localStorage.setItem(key, selectedShift);
-    cell.innerHTML = date + "<br>" + selectedShift;
-  };
-
-  row.appendChild(cell);
-
-  if ((firstDay + date) % 7 === 0) {
-    tbody.appendChild(row);
-    row = document.createElement("tr");
+  // 空白
+  for (let i = 0; i < firstDay; i++) {
+    row.appendChild(document.createElement("td"));
   }
-}
 
-tbody.appendChild(row);
+  for (let date = 1; date <= lastDate; date++) {
+    const cell = document.createElement("td");
+    cell.textContent = date;
+
+    // 今日をハイライト
+    if (
+      date === today.getDate() &&
+      month === today.getMonth() &&
+      year === today.getFullYear()
+    ) {
+      cell.classList.add("today");
+    }
+
+    row.appendChild(cell);
+
+    if ((firstDay + date) % 7 === 0) {
+      tbody.appendChild(row);
+      row = document.createElement("tr");
+    }
+  }
+
+  tbody.appendChild(row);
 </script>
 
 </body>
