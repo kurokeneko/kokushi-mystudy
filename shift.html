@@ -1,82 +1,182 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>簡単カレンダー</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-    }
-    table {
-      margin: 20px auto;
-      border-collapse: collapse;
-    }
-    th, td {
-      width: 50px;
-      height: 50px;
-      border: 1px solid #ccc;
-    }
-    th {
-      background: #f0f0f0;
-    }
-    .today {
-      background: #ffeb3b;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>シフト管理カレンダー</title>
+
+<style>
+body {
+  font-family: -apple-system, BlinkMacSystemFont;
+  margin: 0;
+  background: #f5f6fa;
+}
+
+header {
+  text-align: center;
+  padding: 15px;
+  background: #4a69bd;
+  color: white;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 10px;
+}
+
+button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  background: #4a69bd;
+  color: white;
+  font-size: 14px;
+}
+
+.shift-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 10px;
+}
+
+.shift-btn {
+  padding: 10px;
+  border-radius: 10px;
+  font-weight: bold;
+}
+
+.day { background: #74b9ff; }
+.night { background: #ff7675; }
+.off { background: #55efc4; }
+.late { background: #ffeaa7; }
+
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+  padding: 10px;
+}
+
+.cell {
+  background: white;
+  border-radius: 10px;
+  height: 70px;
+  padding: 5px;
+  font-size: 14px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  position: relative;
+}
+
+.date {
+  font-size: 12px;
+  color: #888;
+}
+
+.shift {
+  font-size: 16px;
+  font-weight: bold;
+  margin-top: 5px;
+}
+
+.today {
+  border: 2px solid #4a69bd;
+}
+</style>
 </head>
+
 <body>
 
-<h2 id="title"></h2>
-<table id="calendar">
-  <thead>
-    <tr>
-      <th>日</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th>土</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
+<header id="title"></header>
+
+<div class="controls">
+  <button onclick="changeMonth(-1)">◀</button>
+  <button onclick="changeMonth(1)">▶</button>
+</div>
+
+<div class="shift-buttons">
+  <button class="shift-btn day" onclick="setShift('日勤','day')">日勤</button>
+  <button class="shift-btn night" onclick="setShift('夜勤','night')">夜勤</button>
+  <button class="shift-btn off" onclick="setShift('休み','off')">休み</button>
+  <button class="shift-btn late" onclick="setShift('遅番','late')">遅番</button>
+  <button onclick="setShift('','')">消去</button>
+</div>
+
+<div class="calendar" id="calendar"></div>
 
 <script>
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth();
+let current = new Date();
+let selectedShift = "";
+let selectedClass = "";
 
-  document.getElementById("title").textContent = `${year}年 ${month+1}月`;
+function setShift(name, cls) {
+  selectedShift = name;
+  selectedClass = cls;
+}
+
+function changeMonth(num) {
+  current.setMonth(current.getMonth() + num);
+  render();
+}
+
+function render() {
+  const cal = document.getElementById("calendar");
+  cal.innerHTML = "";
+
+  const year = current.getFullYear();
+  const month = current.getMonth();
+
+  document.getElementById("title").textContent =
+    `${year}年 ${month + 1}月`;
 
   const firstDay = new Date(year, month, 1).getDay();
   const lastDate = new Date(year, month + 1, 0).getDate();
 
-  const tbody = document.querySelector("#calendar tbody");
-  let row = document.createElement("tr");
-
-  // 空白
   for (let i = 0; i < firstDay; i++) {
-    row.appendChild(document.createElement("td"));
+    cal.appendChild(document.createElement("div"));
   }
 
-  for (let date = 1; date <= lastDate; date++) {
-    const cell = document.createElement("td");
-    cell.textContent = date;
+  for (let d = 1; d <= lastDate; d++) {
+    const cell = document.createElement("div");
+    cell.className = "cell";
 
-    // 今日をハイライト
-    if (
-      date === today.getDate() &&
-      month === today.getMonth() &&
-      year === today.getFullYear()
-    ) {
-      cell.classList.add("today");
-    }
+    const key = `${year}-${month}-${d}`;
+    const saved = JSON.parse(localStorage.getItem(key) || "{}");
 
-    row.appendChild(cell);
+    const isToday =
+      d === new Date().getDate() &&
+      month === new Date().getMonth() &&
+      year === new Date().getFullYear();
 
-    if ((firstDay + date) % 7 === 0) {
-      tbody.appendChild(row);
-      row = document.createElement("tr");
-    }
+    if (isToday) cell.classList.add("today");
+
+    cell.innerHTML = `
+      <div class="date">${d}</div>
+      <div class="shift ${saved.class || ""}">${saved.name || ""}</div>
+    `;
+
+    cell.onclick = () => {
+      if (!selectedShift && !selectedClass) {
+        localStorage.removeItem(key);
+      } else {
+        localStorage.setItem(key, JSON.stringify({
+          name: selectedShift,
+          class: selectedClass
+        }));
+      }
+      render();
+    };
+
+    cal.appendChild(cell);
   }
+}
 
-  tbody.appendChild(row);
+render();
 </script>
 
 </body>
